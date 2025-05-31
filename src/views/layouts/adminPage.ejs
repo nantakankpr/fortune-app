@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+  <script defer src="/js/sidebar.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Admin</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard">📊 Dashboard</a>
+        <a href="/admin/transactions">💸 Transactions</a>
+        <a href="/admin/members">👤 Members</a>
+        <a href="/admin/help">📖 Help</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+        <span class="topbar-title">Welcome, Admin</span>
+        <a href="/logout" class="logout-btn">Logout</a>
+      </header>
+
+      <!-- Main Content -->
+      <main class="content-area">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>จัดการธุรกรรม - Mobile Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-color: #2196f3;
+            --primary-dark: #1976d2;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --background: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            font-size: 16px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* App Container */
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 100vw;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 16px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 36px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Navigation Drawer */
+        .nav-drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: var(--card-bg);
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .nav-drawer.open {
+            left: 0;
+        }
+
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .nav-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            min-height: 56px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #e3f2fd;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item-icon {
+            margin-right: 12px;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Filters */
+        .filters-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .filter-input {
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--card-bg);
+            transition: all 0.3s;
+            min-height: 48px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .search-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 48px;
+            margin-top: 8px;
+        }
+
+        .search-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Transaction Cards */
+        .transactions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transaction-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .transaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .transaction-card.pending {
+            border-left-color: var(--warning-color);
+        }
+
+        .transaction-card.approved {
+            border-left-color: var(--success-color);
+        }
+
+        .transaction-card.rejected {
+            border-left-color: var(--danger-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .member-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .card-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .transaction-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .pagination-info {
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .pagination-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            font-size: 16px;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8f9fa;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .modal-actions {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background: #f8f9fa;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--success-color);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 3000;
+            max-width: calc(100vw - 32px);
+            text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error {
+            background: var(--danger-color);
+        }
+
+        /* Tablet Styles */
+        @media (min-width: 768px) {
+            .main-content {
+                padding: 24px;
+            }
+
+            .filters-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .search-btn {
+                margin-top: 0;
+                align-self: end;
+            }
+
+            .transactions-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                gap: 16px;
+            }
+
+            .modal-actions {
+                flex-wrap: nowrap;
+            }
+
+            .btn {
+                flex: none;
+                min-width: 120px;
+            }
+
+            .pagination {
+                gap: 12px;
+            }
+
+            .pagination-btn {
+                min-width: 48px;
+                min-height: 48px;
+            }
+        }
+
+        /* Large Tablet/Desktop */
+        @media (min-width: 1024px) {
+            .filters-grid {
+                grid-template-columns: repeat(4, 1fr);
+                align-items: end;
+            }
+
+            .nav-drawer {
+                position: static;
+                left: 0;
+            }
+
+            .nav-overlay {
+                display: none;
+            }
+
+            .menu-btn {
+                display: none;
+            }
+
+            .app {
+                flex-direction: row;
+            }
+
+            .nav-drawer {
+                width: 280px;
+                height: 100vh;
+                position: sticky;
+                top: 0;
+            }
+
+            .main-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+        }
+
+        /* High resolution displays */
+        @media (-webkit-min-device-pixel-ratio: 2) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
+        /* Dark mode support (if needed) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #121212;
+                --card-bg: #1e1e1e;
+                --text-primary: #ffffff;
+                --text-secondary: #b3b3b3;
+                --border-color: #333333;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Navigation Overlay -->
+        <div class="nav-overlay" id="navOverlay"></div>
+
+        <!-- Navigation Drawer -->
+        <nav class="nav-drawer" id="navDrawer">
+            <div class="nav-header">
+                <h2 class="nav-title">Admin Dashboard</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="/admin/transactions" class="nav-item active" onclick="setActivePage('transactions')">
+                    <span class="nav-item-icon">📊</span>
+                    จัดการธุรกรรม
+                </a>
+                <a href="/admin/members" class="nav-item" onclick="setActivePage('members')">
+                    <span class="nav-item-icon">👥</span>
+                    ข้อมูลสมาชิก
+                </a>
+            </div>
+        </nav>
+
+        <div class="main-wrapper">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <button class="menu-btn" id="menuBtn" aria-label="เปิดเมนู">
+                            ☰
+                        </button>
+                        <h1 class="app-title">จัดการธุรกรรม</h1>
+                    </div>
+                    <div class="header-actions">
+                        <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Filters -->
+                <div class="filters-container">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">ค้นหา (ชื่อ/ช่องทาง)</label>
+                            <input type="text" class="filter-input" id="searchInput" placeholder="กรอกชื่อหรือช่องทาง">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">วันที่</label>
+                            <input type="date" class="filter-input" id="dateFilter">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">สถานะ</label>
+                            <select class="filter-input" id="statusFilter">
+                                <option value="">ทั้งหมด</option>
+                                <option value="pending">รอดำเนินการ</option>
+                                <option value="approved">อนุมัติแล้ว</option>
+                                <option value="rejected">ยกเลิกแล้ว</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="search-btn" onclick="applyFilters()">ค้นหา</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions -->
+                <div class="transactions-container" id="transactionsContainer">
+                    <!-- Transaction cards will be populated by JavaScript -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container" id="paginationContainer" style="display: none;">
+                    <div class="pagination-info" id="paginationInfo">
+                        <!-- Pagination info will be populated by JavaScript -->
+                    </div>
+                    <div class="pagination" id="pagination">
+                        <!-- Pagination buttons will be populated by JavaScript -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">รายละเอียดธุรกรรม</h3>
+                <p class="modal-subtitle">ข้อมูลครบถ้วนของธุรกรรม</p>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Transaction details will be populated by JavaScript -->
+            </div>
+            <div class="modal-actions" id="modalActions">
+                <!-- Action buttons will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirmTitle">ยืนยันการดำเนินการ</h3>
+                <p class="modal-subtitle" id="confirmMessage">คุณต้องการดำเนินการนี้ใช่หรือไม่?</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('confirmModal')">ยกเลิก</button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="confirmAction()">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Sample transaction data (simulate API response)
+        let allTransactions = [
+            // Page 1
+            {
+                id: 1,
+                date: '2025-05-29',
+                memberName: 'ณัฐพงศ์ ใจดี',
+                channel: 'PromptPay',
+                amount: 499,
+                status: 'pending',
+                transactionId: 'TXN001234567',
+                phoneNumber: '081-234-5678',
+                time: '14:30:25'
+            },
+            {
+                id: 2,
+                date: '2025-05-29',
+                memberName: 'อาร์มี่ สุขสันต์',
+                channel: 'Mobile Banking',
+                amount: 999,
+                status: 'approved',
+                transactionId: 'TXN001234568',
+                phoneNumber: '089-876-5432',
+                time: '09:15:10'
+            },
+            {
+                id: 3,
+                date: '2025-05-28',
+                memberName: 'มิ้นต์ หวานใจ',
+                channel: 'PromptPay',
+                amount: 299,
+                status: 'pending',
+                transactionId: 'TXN001234569',
+                phoneNumber: '092-555-1234',
+                time: '16:45:33'
+            },
+            {
+                id: 4,
+                date: '2025-05-28',
+                memberName: 'เจมส์ คูลแมน',
+                channel: 'Bank Transfer',
+                amount: 799,
+                status: 'rejected',
+                transactionId: 'TXN001234570',
+                phoneNumber: '083-999-8888',
+                time: '11:20:45'
+            },
+            {
+                id: 5,
+                date: '2025-05-27',
+                memberName: 'ปิงปอง สนุกสนาน',
+                channel: 'PromptPay',
+                amount: 1299,
+                status: 'approved',
+                transactionId: 'TXN001234571',
+                phoneNumber: '086-777-6666',
+                time: '13:10:15'
+            },
+            {
+                id: 6,
+                date: '2025-05-27',
+                memberName: 'ลิซ่า กิมจิ',
+                channel: 'Mobile Banking',
+                amount: 599,
+                status: 'pending',
+                transactionId: 'TXN001234572',
+                phoneNumber: '094-111-2222',
+                time: '10:30:45'
+            },
+            {
+                id: 7,
+                date: '2025-05-26',
+                memberName: 'จอห์น สมิธ',
+                channel: 'PromptPay',
+                amount: 399,
+                status: 'approved',
+                transactionId: 'TXN001234573',
+                phoneNumber: '081-333-4444',
+                time: '15:20:30'
+            },
+            {
+                id: 8,
+                date: '2025-05-26',
+                memberName: 'มาร์ค ซัคเคอร์',
+                channel: 'Bank Transfer',
+                amount: 1599,
+                status: 'pending',
+                transactionId: 'TXN001234574',
+                phoneNumber: '089-555-7777',
+                time: '08:45:15'
+            },
+            {
+                id: 9,
+                date: '2025-05-25',
+                memberName: 'เทย์เลอร์ สวิฟต์',
+                channel: 'PromptPay',
+                amount: 899,
+                status: 'approved',
+                transactionId: 'TXN001234575',
+                phoneNumber: '092-888-9999',
+                time: '12:15:50'
+            },
+            {
+                id: 10,
+                date: '2025-05-25',
+                memberName: 'อิลอน มัสก์',
+                channel: 'Mobile Banking',
+                amount: 2499,
+                status: 'rejected',
+                transactionId: 'TXN001234576',
+                phoneNumber: '083-000-1111',
+                time: '17:30:25'
+            },
+            // Page 2
+            {
+                id: 11,
+                date: '2025-05-24',
+                memberName: 'บิล เกตส์',
+                channel: 'Bank Transfer',
+                amount: 1999,
+                status: 'approved',
+                transactionId: 'TXN001234577',
+                phoneNumber: '081-222-3333',
+                time: '09:00:00'
+            },
+            {
+                id: 12,
+                date: '2025-05-24',
+                memberName: 'สตีฟ จ็อบส์',
+                channel: 'PromptPay',
+                amount: 799,
+                status: 'pending',
+                transactionId: 'TXN001234578',
+                phoneNumber: '089-444-5555',
+                time: '14:45:30'
+            },
+            {
+                id: 13,
+                date: '2025-05-23',
+                memberName: 'วอร์เรน บัฟเฟต',
+                channel: 'Mobile Banking',
+                amount: 3299,
+                status: 'approved',
+                transactionId: 'TXN001234579',
+                phoneNumber: '092-666-7777',
+                time: '11:30:15'
+            },
+            {
+                id: 14,
+                date: '2025-05-23',
+                memberName: 'เจฟ เบโซส',
+                channel: 'PromptPay',
+                amount: 1599,
+                status: 'pending',
+                transactionId: 'TXN001234580',
+                phoneNumber: '083-888-9999',
+                time: '16:20:45'
+            },
+            {
+                id: 15,
+                date: '2025-05-22',
+                memberName: 'ลาร์รี่ เพจ',
+                channel: 'Bank Transfer',
+                amount: 999,
+                status: 'rejected',
+                transactionId: 'TXN001234581',
+                phoneNumber: '081-111-2222',
+                time: '13:15:20'
+            },
+            {
+                id: 16,
+                date: '2025-05-22',
+                memberName: 'เซอร์เกย์ บริน',
+                channel: 'PromptPay',
+                amount: 699,
+                status: 'approved',
+                transactionId: 'TXN001234582',
+                phoneNumber: '089-333-4444',
+                time: '10:45:35'
+            },
+            {
+                id: 17,
+                date: '2025-05-21',
+                memberName: 'ทิม คุก',
+                channel: 'Mobile Banking',
+                amount: 1299,
+                status: 'pending',
+                transactionId: 'TXN001234583',
+                phoneNumber: '092-555-6666',
+                time: '15:30:10'
+            },
+            {
+                id: 18,
+                date: '2025-05-21',
+                memberName: 'ซาต์ย่า นาเดลลา',
+                channel: 'PromptPay',
+                amount: 899,
+                status: 'approved',
+                transactionId: 'TXN001234584',
+                phoneNumber: '083-777-8888',
+                time: '12:00:25'
+            },
+            {
+                id: 19,
+                date: '2025-05-20',
+                memberName: 'แจ็ค หม่า',
+                channel: 'Bank Transfer',
+                amount: 2199,
+                status: 'rejected',
+                transactionId: 'TXN001234585',
+                phoneNumber: '081-999-0000',
+                time: '08:30:55'
+            },
+            {
+                id: 20,
+                date: '2025-05-20',
+                memberName: 'ปอนี่ หม่า',
+                channel: 'PromptPay',
+                amount: 599,
+                status: 'approved',
+                transactionId: 'TXN001234586',
+                phoneNumber: '089-111-2222',
+                time: '17:45:40'
+            }
+        ];
+
+        // Pagination variables
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalItems = 0;
+        let totalPages = 0;
+        let filteredTransactions = [];
+        let isLoading = false;
+        let currentAction = null;
+        let currentTransactionId = null;
+
+        // DOM Elements
+        const menuBtn = document.getElementById('menuBtn');
+        const navDrawer = document.getElementById('navDrawer');
+        const navOverlay = document.getElementById('navOverlay');
+        const transactionsContainer = document.getElementById('transactionsContainer');
+        const paginationContainer = document.getElementById('paginationContainer');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const pagination = document.getElementById('pagination');
+        const detailsModal = document.getElementById('detailsModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const toast = document.getElementById('toast');
+
+        // Simulate API delay
+        function simulateAPIDelay(ms = 500) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            isLoading = loading;
+            if (loading) {
+                transactionsContainer.innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <span>กำลังโหลดข้อมูล...</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Simulate API call to fetch transactions
+        async function fetchTransactions(page = 1, limit = 10, filters = {}) {
+            setLoading(true);
+            
+            try {
+                // Simulate API delay
+                await simulateAPIDelay();
+                
+                // Apply filters to all transactions
+                let filtered = allTransactions.filter(transaction => {
+                    const matchesSearch = !filters.search ||
+                        transaction.memberName.toLowerCase().includes(filters.search.toLowerCase()) ||
+                        transaction.channel.toLowerCase().includes(filters.search.toLowerCase());
+                    
+                    const matchesDate = !filters.date || transaction.date === filters.date;
+                    const matchesStatus = !filters.status || transaction.status === filters.status;
+                    
+                    return matchesSearch && matchesDate && matchesStatus;
+                });
+                
+                // Calculate pagination
+                const total = filtered.length;
+                const totalPagesCalc = Math.ceil(total / limit);
+                const startIndex = (page - 1) * limit;
+                const endIndex = startIndex + limit;
+                const data = filtered.slice(startIndex, endIndex);
+                
+                // Simulate API response structure
+                return {
+                    success: true,
+                    data: data,
+                    pagination: {
+                        page: page,
+                        limit: limit,
+                        total: total,
+                        totalPages: totalPagesCalc,
+                        hasNextPage: page < totalPagesCalc,
+                        hasPrevPage: page > 1
+                    }
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    message: 'ไม่สามารถโหลดข้อมูลได้',
+                    error: error.message
+                };
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Get current filter values
+        function getCurrentFilters() {
+            return {
+                search: document.getElementById('searchInput').value,
+                date: document.getElementById('dateFilter').value,
+                status: document.getElementById('statusFilter').value
+            };
+        }
+
+        // Load filters from URL parameters
+        function loadFiltersFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            
+            const searchInput = document.getElementById('searchInput');
+            const dateFilter = document.getElementById('dateFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            
+            if (params.get('search')) searchInput.value = params.get('search');
+            if (params.get('date')) dateFilter.value = params.get('date');
+            if (params.get('status')) statusFilter.value = params.get('status');
+            if (params.get('limit')) {
+                const limit = parseInt(params.get('limit'));
+                if ([5, 10, 20, 50].includes(limit)) {
+                    pageSizeSelect.value = limit;
+                    itemsPerPage = limit;
+                }
+            }
+            if (params.get('page')) {
+                currentPage = parseInt(params.get('page')) || 1;
+            }
+        }
+
+        // Load transactions from API
+        async function loadTransactions(page = 1) {
+            const filters = getCurrentFilters();
+            const response = await fetchTransactions(page, itemsPerPage, filters);
+            
+            if (response.success) {
+                filteredTransactions = response.data;
+                currentPage = response.pagination.page;
+                totalItems = response.pagination.total;
+                totalPages = response.pagination.totalPages;
+                
+                renderTransactions();
+                renderPagination();
+            } else {
+                showToast(response.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+                renderEmptyState();
+            }
+        }
+
+        // Render empty state
+        function renderEmptyState() {
+            transactionsContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-text">ไม่พบข้อมูลธุรกรรม</div>
+                </div>
+            `;
+            paginationContainer.style.display = 'none';
+        }
+
+        // Render transactions
+        function renderTransactions() {
+            if (filteredTransactions.length === 0) {
+                renderEmptyState();
+                return;
+            }
+
+            transactionsContainer.innerHTML = filteredTransactions.map(transaction => `
+                <div class="transaction-card ${transaction.status}" onclick="showTransactionDetails(${transaction.id})">
+                    <div class="card-header">
+                        <div class="member-name">${transaction.memberName}</div>
+                        <div class="transaction-amount">฿${transaction.amount.toLocaleString()}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="transaction-date">${formatDate(transaction.date)}</div>
+                        <div class="status-badge status-${transaction.status}">
+                            ${getStatusText(transaction.status)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render pagination
+        function renderPagination() {
+            if (totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            paginationContainer.style.display = 'block';
+            
+            // Update pagination info
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            
+            paginationInfo.textContent = `แสดงรายการที่ ${startItem}-${endItem} จากทั้งหมด ${totalItems.toLocaleString()} รายการ`;
+            
+            // Generate pagination buttons
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // Adjust startPage if we're near the end
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            let paginationHTML = `
+                <button class="pagination-btn" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>
+                    ««
+                </button>
+                <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    ‹
+                </button>
+            `;
+            
+            // Add page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            paginationHTML += `
+                <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    ›
+                </button>
+                <button class="pagination-btn" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    »»
+                </button>
+            `;
+            
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // Go to specific page
+        async function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage || isLoading) {
+                return;
+            }
+            
+            await loadTransactions(page);
+            
+            // Scroll to top of transactions
+            transactionsContainer.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+
+        // Change page size
+        async function changePageSize() {
+            const newPageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            if (newPageSize === itemsPerPage) return;
+            
+            itemsPerPage = newPageSize;
+            currentPage = 1; // Reset to first page
+            await loadTransactions(1);
+        }
+
+        // Show transaction details modal
+        function showTransactionDetails(transactionId) {
+            // Find transaction in all data, not just current page
+            const transaction = allTransactions.find(t => t.id === transactionId);
+            if (!transaction) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const modalActions = document.getElementById('modalActions');
+
+            modalBody.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">รหัสธุรกรรม</span>
+                    <span class="detail-value">${transaction.transactionId}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ชื่อสมาชิก</span>
+                    <span class="detail-value">${transaction.memberName}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">หมายเลขโทรศัพท์</span>
+                    <span class="detail-value">${transaction.phoneNumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ช่องทาง</span>
+                    <span class="detail-value">${transaction.channel}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">จำนวนเงิน</span>
+                    <span class="detail-value">฿${transaction.amount.toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">วันที่</span>
+                    <span class="detail-value">${formatDate(transaction.date)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">เวลา</span>
+                    <span class="detail-value">${transaction.time}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">สถานะ</span>
+                    <span class="detail-value">
+                        <span class="status-badge status-${transaction.status}">
+                            ${getStatusText(transaction.status)}
+                        </span>
+                    </span>
+                </div>
+            `;
+
+            if (transaction.status === 'pending') {
+                modalActions.innerHTML = `
+                    <button class="btn btn-secondary" onclick="closeModal('detailsModal')">ปิด</button>
+                    <button class="btn btn-success" onclick="showConfirmModal(${transaction.id}, 'approve')">
+                        ✅ ยืนยัน
+                    </button>
+                    <button class="btn btn-danger" onclick="showConfirmModal(${transaction.id}, 'reject')">
+                        ❌ ยกเลิก
+                    </button>
+                `;
+            } else {
+                modalActions.innerHTML = `
+                    <button class="btn btn-primary" onclick="closeModal('detailsModal')">ปิด</button>
+                `;
+            }
+
+            showModal('detailsModal');
+        }
+
+        // Show confirmation modal
+        function showConfirmModal(transactionId, action) {
+            closeModal('detailsModal');
+            
+            const transaction = allTransactions.find(t => t.id === transactionId);
+            const confirmTitle = document.getElementById('confirmTitle');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            currentTransactionId = transactionId;
+            currentAction = action;
+
+            if (action === 'approve') {
+                confirmTitle.textContent = 'ยืนยันธุรกรรม';
+                confirmMessage.textContent = `คุณต้องการยืนยันธุรกรรมของ "${transaction.memberName}" จำนวน ฿${transaction.amount.toLocaleString()} ใช่หรือไม่?`;
+                confirmBtn.textContent = '✅ ยืนยัน';
+                confirmBtn.className = 'btn btn-success';
+            } else {
+                confirmTitle.textContent = 'ยกเลิกธุรกรรม';
+                confirmMessage.textContent = `คุณต้องการยกเลิกธุรกรรมของ "${transaction.memberName}" จำนวน ฿${transaction.amount.toLocaleString()} ใช่หรือไม่?`;
+                confirmBtn.textContent = '❌ ยกเลิก';
+                confirmBtn.className = 'btn btn-danger';
+            }
+
+            showModal('confirmModal');
+        }
+
+        // Confirm action
+        async function confirmAction() {
+            if (!currentTransactionId || !currentAction) return;
+
+            const transaction = allTransactions.find(t => t.id === currentTransactionId);
+            if (!transaction) return;
+
+            // Update transaction status
+            transaction.status = currentAction === 'approve' ? 'approved' : 'rejected';
+
+            showToast(
+                `ธุรกรรมของ "${transaction.memberName}" ได้${currentAction === 'approve' ? 'รับการยืนยัน' : 'ถูกยกเลิก'}แล้ว`,
+                'success'
+            );
+
+            // Reload current page to reflect changes
+            await loadTransactions(currentPage);
+            closeModal('confirmModal');
+            
+            currentTransactionId = null;
+            currentAction = null;
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Apply filters (reload from first page)
+        async function applyFilters() {
+            currentPage = 1;
+            await loadTransactions(1);
+            updateURLParams();
+        }
+
+        // Update URL parameters for bookmarking/sharing
+        function updateURLParams() {
+            const filters = getCurrentFilters();
+            const params = new URLSearchParams();
+            
+            if (filters.search) params.set('search', filters.search);
+            if (filters.date) params.set('date', filters.date);
+            if (filters.status) params.set('status', filters.status);
+            if (currentPage > 1) params.set('page', currentPage);
+            if (itemsPerPage !== 10) params.set('limit', itemsPerPage);
+            
+            const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.replaceState({}, '', newURL);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFiltersFromURL();
+            loadTransactions(currentPage);
+            setupEventListeners();
+            handleResize();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Menu toggle
+            menuBtn.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', closeNav);
+
+            // Search and filters with debounce
+            const searchInput = document.getElementById('searchInput');
+            const dateFilter = document.getElementById('dateFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            
+            searchInput.addEventListener('input', debounce(applyFilters, 500));
+            dateFilter.addEventListener('change', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+
+            // Window resize
+            window.addEventListener('resize', debounce(handleResize, 250));
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (detailsModal.classList.contains('show')) {
+                        closeModal('detailsModal');
+                    } else if (confirmModal.classList.contains('show')) {
+                        closeModal('confirmModal');
+                    } else if (window.innerWidth < 1024 && navDrawer.classList.contains('open')) {
+                        closeNav();
+                    }
+                }
+                
+                // Pagination keyboard shortcuts (when not in input fields)
+                if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+                    if (e.key === 'ArrowLeft' && currentPage > 1) {
+                        e.preventDefault();
+                        goToPage(currentPage - 1);
+                    } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                        e.preventDefault();
+                        goToPage(currentPage + 1);
+                    } else if (e.key === 'Home') {
+                        e.preventDefault();
+                        goToPage(1);
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        goToPage(totalPages);
+                    }
+                }
+            });
+
+            // Close modals when clicking outside
+            [detailsModal, confirmModal].forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+        }
+
+        // Handle responsive behavior
+        function handleResize() {
+            if (window.innerWidth >= 1024) {
+                navDrawer.classList.remove('open');
+                navOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Navigation functions
+        function toggleNav() {
+            if (navDrawer.classList.contains('open')) {
+                closeNav();
+            } else {
+                openNav();
+            }
+        }
+
+        function openNav() {
+            navDrawer.classList.add('open');
+            navOverlay.classList.add('show');
+            if (window.innerWidth < 1024) {
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeNav() {
+            navDrawer.classList.remove('open');
+            navOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function setActivePage(page) {
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            if (page === 'transactions') {
+                document.querySelector('.nav-item').classList.add('active');
+            } else {
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+            }
+
+            closeNav();
+        }
+
+        // Show toast
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '⏳ รอดำเนินการ',
+                'approved': '✅ อนุมัติแล้ว',
+                'rejected': '❌ ยกเลิกแล้ว'
+            };
+            return statusMap[status] || status;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function logout() {
+            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                showToast('ออกจากระบบแล้ว', 'success');
+                setTimeout(() => {
+                    alert('ออกจากระบบสำเร็จ! (ในระบบจริงจะนำทางกลับไปยังหน้าเข้าสู่ระบบ)');
+                    window.location.href = '/admin/login';
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+
+</html>
