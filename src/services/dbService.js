@@ -1,17 +1,22 @@
 const mariadb = require('mariadb');
+const config = require('../config/config');
 
 const pool = mariadb.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: config.DB_HOST,
+  user: config.DB_USER,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  timezone: '+07:00', // เพิ่มบรรทัดนี้
+  dateStrings: true    // เพิ่มบรรทัดนี้เพื่อให้ return เป็น string
 });
 
 const dbOptions = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: config.DB_HOST,
+  user: config.DB_USER,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  timezone: '+07:00', // เพิ่มบรรทัดนี้
+  dateStrings: true    // เพิ่มบรรทัดนี้เพื่อให้ return เป็น string
 };
 
-module.exports = {pool,dbOptions};
+module.exports = { pool, dbOptions };

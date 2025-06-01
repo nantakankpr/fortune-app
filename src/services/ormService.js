@@ -1,18 +1,12 @@
 const {pool} = require('./dbService');
 
-const allowedTables = ['users', 'orders', 'products','packages','promptpay_recipients','subscriptions','transactions']; // เพิ่มชื่อ table ที่อนุญาตให้ใช้
-
 class DBHelper {
-  validateIdentifier(name) {
+  static validateIdentifier(name) {
     const validName = /^[a-zA-Z0-9_]+$/;
     return validName.test(name);
   }
 
-  validateTableName(table) {
-    return allowedTables.includes(table);
-  }
-
-  async query(sql, params) {
+  static async query(sql, params) {
     let conn;
     try {
       if (process.env.NODE_ENV !== 'production') {
@@ -31,40 +25,34 @@ class DBHelper {
     }
   }
 
-  async select(table, whereObj = {}, extraParams = []) {
-    if (!this.validateTableName(table)) throw new Error('Invalid table name');
-
+  static async select(table, whereObj = {}, extraParams = []) {
     const whereKeys = Object.keys(whereObj);
     const whereClause = whereKeys.length
       ? 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ')
       : '';
     const sql = `SELECT * FROM ${table} ${whereClause}`;
     const params = Object.values(whereObj).concat(extraParams);
-    return this.query(sql, params);
+    return DBHelper.query(sql, params);
   }
 
-  async insert(table, data) {
-    if (!this.validateTableName(table)) throw new Error('Invalid table name');
-
+  static async insert(table, data) {
     const keys = Object.keys(data);
     const values = Object.values(data);
 
-    if (!keys.every(key => this.validateIdentifier(key))) {
+    if (!keys.every(key => DBHelper.validateIdentifier(key))) {
       throw new Error('Invalid column name(s)');
     }
 
     const placeholders = keys.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-    return this.query(sql, values);
+    return DBHelper.query(sql, values);
   }
 
-  async update(table, data, whereObj) {
-    if (!this.validateTableName(table)) throw new Error('Invalid table name');
-
+  static async update(table, data, whereObj) {
     const setKeys = Object.keys(data);
     const setValues = Object.values(data);
 
-    if (!setKeys.every(key => this.validateIdentifier(key))) {
+    if (!setKeys.every(key => DBHelper.validateIdentifier(key))) {
       throw new Error('Invalid column name(s)');
     }
 
@@ -73,7 +61,7 @@ class DBHelper {
     const whereKeys = Object.keys(whereObj);
     const whereValues = Object.values(whereObj);
 
-    if (!whereKeys.every(key => this.validateIdentifier(key))) {
+    if (!whereKeys.every(key => DBHelper.validateIdentifier(key))) {
       throw new Error('Invalid column name(s) in WHERE clause');
     }
 
@@ -82,8 +70,8 @@ class DBHelper {
       : '';
 
     const sql = `UPDATE ${table} SET ${setClause} ${whereClause}`;
-    return this.query(sql, [...setValues, ...whereValues]);
+    return DBHelper.query(sql, [...setValues, ...whereValues]);
   }
 }
 
-module.exports = { DBHelper: new DBHelper() };
+module.exports = { DBHelper };

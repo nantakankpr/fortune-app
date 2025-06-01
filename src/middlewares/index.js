@@ -1,4 +1,5 @@
 module.exports = {
     csrfProtection: require('./csrf'),
-    auth: require('./authMiddleware')
+    auth: require('./auth'),
+    subscription: require('./subscriptionMiddleware')
 };

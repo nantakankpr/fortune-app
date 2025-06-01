@@ -3,20 +3,23 @@ dotenv.config();
 
 const express = require('express');
 const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session); // ← อย่าลืม require
+const MySQLStore = require('express-mysql-session')(session);
 const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const path = require('path');
 const device = require('express-device');
+const fileUpload = require('express-fileupload');
 
+const config = require('./config/config');
 const { dbOptions } = require('./services/dbService');
 const webhookRoute = require('./routes/webhook');
 const routes = require('./routes');
+const { CronScheduler } = require('./jobs'); // เพิ่ม cron scheduler
 
 const app = express();
-const PORT = process.env.AUN_PORT || 3000;
+const PORT = config.PORT || 3000;
 
 // 🔐 Security
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -37,20 +40,35 @@ const sessionStore = new MySQLStore({
   checkExpirationInterval: 900000 // ✅ ตรวจทุก 15 นาที (หน่วย ms)
 });
 
-
 app.use(session({
   key: 'session_id',
-  secret: 'fortune_app_key',
+  secret: config.SESSION_SECRET,
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: config.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 86400000,
+    maxAge: config.SESSION_MAX_AGE,
   }
 }));
+
+// Add file upload middleware
+app.use(fileUpload({
+  createParentPath: true,
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  },
+  abortOnLimit: true,
+  responseOnLimit: "File size limit has been reached",
+  useTempFiles: false,
+  tempFileDir: '/tmp/'
+}));
+
+// Body parser middleware (make sure this comes after fileUpload)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 🌐 View engine
 app.set('view engine', 'ejs');
@@ -64,10 +82,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 // === 🚨 LINE Webhook: ต้องมาก่อน body-parser เพราะ LINE อาจส่ง raw body
 app.use('/webhook', webhookRoute);
 
-// 🧠 Body Parsers
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-
 // 🌍 Routes
 app.use('/', routes);
 
@@ -80,7 +94,37 @@ app.use((err, req, res, next) => {
   }
 });
 
+// 📅 Initialize Cron Jobs
+CronScheduler.initializeJobs();
+
 // 🚀 Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
+  
+  // แสดงสถานะ cron jobs
+  const jobsStatus = CronScheduler.getJobsStatus();
+  console.log('📅 Cron Jobs Status:', jobsStatus);
 });
+
+// 🛑 Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n🛑 Received SIGINT, shutting down gracefully...');
+  
+  // หยุด cron jobs
+  CronScheduler.stopAllJobs();
+  
+  // ปิด server
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+  
+  // หยุด cron jobs
+  CronScheduler.stopAllJobs();
+  
+  // ปิด server
+  process.exit(0);
+});
+
+module.exports = app;

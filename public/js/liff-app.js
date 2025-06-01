@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-
     liff.ready.then(async () => {
         try {
             // ตรวจ session กับ backend
@@ -19,8 +18,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await res.json();
 
             if (data.loggedIn) {
+                // เช็คว่ามี subscription หรือไม่
+                if (!data.hasSubscription) {
+                    // ยังไม่มี subscription ให้ไปหน้า payment
+                    window.location.href = '/order/payment';
+                    return;
+                }
+                
+                // มี subscription แล้วให้ปิด LIFF
                 if (liff.isInClient()) {
-                    liff.closeWindow();
+                    window.location.href = '/order/succeeded';
                 }
                 return;
             }
@@ -59,10 +66,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     window.location.href = loginJson.redirect;
                 } else {
                     if (liff.isInClient()) {
-                        liff.closeWindow();
+                        window.location.href = '/order/succeeded';
                     }
                 }
-
             } else {
                 liff.logout();
                 location.reload();

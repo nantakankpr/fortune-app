@@ -274,12 +274,12 @@
 
     .date-input-group {
       display: grid;
-      grid-template-columns: 1fr 1fr 2fr;
-      gap: 10px;
+      grid-template-columns: 1.5fr 1.5fr 1fr;
+      gap: 12px;
     }
 
     .date-input-group select {
-      padding: 15px 15px;
+      padding: 15px 45px 15px 15px;
       border: 2px solid #e1e8ed;
       border-radius: 15px;
       font-size: 16px;
@@ -287,17 +287,77 @@
       transition: all 0.3s ease;
       outline: none;
       appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
       background-repeat: no-repeat;
-      background-position: right 15px center;
+      background-position: right 12px center;
       background-size: 16px;
       cursor: pointer;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      min-width: 0;
     }
 
     .date-input-group select:focus {
       border-color: #667eea;
       box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
       transform: translateY(-2px);
+    }
+
+    /* เพิ่มสไตล์พิเศษสำหรับแต่ละช่อง */
+    #birthYear {
+      font-weight: 600;
+      color: #333;
+    }
+
+    #birthMonth {
+      font-weight: 500;
+      color: #555;
+    }
+
+    #birthDay {
+      font-weight: 500;
+      color: #555;
+      text-align: center;
+    }
+
+    /* Responsive สำหรับหน้าจอเล็ก */
+    @media (max-width: 480px) {
+      .date-input-group {
+        grid-template-columns: 2fr 1.5fr 1fr;
+        gap: 8px;
+      }
+
+      .date-input-group select {
+        padding: 12px 35px 12px 10px;
+        font-size: 14px;
+        background-position: right 8px center;
+        background-size: 14px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .date-input-group {
+        grid-template-columns: 1.4fr 1.2fr 1fr;
+        gap: 6px;
+      }
+
+      .date-input-group select {
+        padding: 10px 30px 10px 8px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 320px) {
+      .date-input-group {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .date-input-group select {
+        padding: 12px 40px 12px 12px;
+        font-size: 14px;
+      }
     }
 
     .register-btn {
@@ -382,8 +442,7 @@
         font-size: 20px;
       }
 
-      .form-input,
-      .date-input-group select {
+      .form-input {
         padding: 12px 15px;
         font-size: 14px;
       }
@@ -451,10 +510,10 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">วันเกิด (ค.ศ.)</label>
+        <label class="form-label">วันเกิด (พ.ศ.)</label>
         <div class="date-input-group">
           <select id="birthYear" name="birthYear" required>
-            <option value="">ปี ค.ศ.</option>
+            <option value="">ปี พ.ศ.</option>
           </select>
           <select id="birthMonth" name="birthMonth" required>
             <option value="">เดือน</option>
@@ -474,7 +533,6 @@
           <select id="birthDay" name="birthDay" required>
             <option value="">วัน</option>
           </select>
-
         </div>
         <div class="error-message">กรุณาเลือกวันเกิดให้ครบถ้วน</div>
       </div>
@@ -495,7 +553,7 @@
   </div>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="?v=<%= Date.now() %>">
+  <script>
     // สร้างตัวเลือกวัน (1-31)
     const daySelect = document.getElementById('birthDay');
     for (let i = 1; i <= 31; i++) {
@@ -505,10 +563,13 @@
       daySelect.appendChild(option);
     }
 
-    // สร้างตัวเลือกปี (1950-2010)
+    // สร้างตัวเลือกปี พ.ศ. (2493-2568)
     const yearSelect = document.getElementById('birthYear');
-    const currentYear = new Date().getFullYear();
-    for (let i = currentYear - 0; i >= 1950; i--) {
+    const currentYear = new Date().getFullYear(); // ปี ค.ศ.
+    const currentYearBE = currentYear + 543; // แปลงเป็น พ.ศ.
+    
+    // สร้างตัวเลือกปี พ.ศ. จากปีปัจจุบันลงไป 2493 (1950 ค.ศ.)
+    for (let i = currentYearBE; i >= 2493; i--) {
       const option = document.createElement('option');
       option.value = i;
       option.textContent = i;
@@ -524,23 +585,33 @@
         // ตรวจสอบวันเกิดเพิ่มเติม
         const day = parseInt(document.getElementById('birthDay').value);
         const month = parseInt(document.getElementById('birthMonth').value);
-        const year = parseInt(document.getElementById('birthYear').value);
+        const yearBE = parseInt(document.getElementById('birthYear').value); // ปี พ.ศ.
 
-        if (!day || !month || !year) {
+        if (!day || !month || !yearBE) {
           alert('กรุณาเลือกวันเกิดให้ครบถ้วน');
           return;
         }
 
+        // แปลงปี พ.ศ. เป็น ค.ศ. เพื่อใช้ในการตรวจสอบ
+        const yearAD = yearBE - 543;
+
         // ตรวจสอบความถูกต้องของวันที่
-        const date = new Date(year, month - 1, day);
-        if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+        const birthDate = new Date(yearAD, month - 1, day);
+        if (birthDate.getDate() !== day || birthDate.getMonth() !== month - 1 || birthDate.getFullYear() !== yearAD) {
           alert('วันเกิดไม่ถูกต้อง กรุณาเลือกใหม่');
+          return;
+        }
+
+        // ตรวจสอบไม่ให้เกินวันปัจจุบัน
+        const today = new Date();
+        if (birthDate > today) {
+          alert('วันเกิดไม่สามารถเป็นวันในอนาคตได้');
           return;
         }
 
         // ถ้าผ่าน validation ทั้งหมด
         let full_name = document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value;
-        let birth_date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        let birth_date = `${yearAD}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
 
         try {
           const liff_id = "2007423411-wVYbLZ63";
@@ -550,6 +621,7 @@
           console.error("LIFF Init Error:", initError);
           return;
         }
+        
         fetch('/auth/register', {
           method: 'POST',
           headers: {
@@ -625,44 +697,51 @@
     });
 
     function updateDaysInMonth() {
-      const year = parseInt(document.getElementById('birthYear').value);
+      const yearBE = parseInt(document.getElementById('birthYear').value);
       const month = parseInt(document.getElementById('birthMonth').value);
       const daySelect = document.getElementById('birthDay');
       const currentDay = parseInt(daySelect.value);
 
       // ตรวจสอบว่ามีการเลือกปีและเดือนแล้ว
-      if (!year || !month) {
-        daySelect.innerHTML = '<option value="">วัน</option>'; // ล้าง
+      if (!yearBE || !month) {
+        // ถ้ายังไม่ได้เลือก ให้แสดงวันทั้งหมด 1-31
+        daySelect.innerHTML = '<option value="">วัน</option>';
+        for (let i = 1; i <= 31; i++) {
+          const option = document.createElement('option');
+          option.value = i;
+          option.textContent = i;
+          if (currentDay === i) {
+            option.selected = true;
+          }
+          daySelect.appendChild(option);
+        }
         return;
       }
 
-      const daysInMonth = new Date(year, month, 0).getDate();
+      // แปลงปี พ.ศ. เป็น ค.ศ.
+      const yearAD = yearBE - 543;
+      const daysInMonth = new Date(yearAD, month, 0).getDate();
 
       // ล้างตัวเลือกเดิม
       daySelect.innerHTML = '<option value="">วัน</option>';
 
-      // เพิ่มวันใหม่
+      // เพิ่มวันใหม่ตามจำนวนวันในเดือน
       for (let i = 1; i <= daysInMonth; i++) {
         const option = document.createElement('option');
         option.value = i;
         option.textContent = i;
-        if (currentDay === i) {
+        if (currentDay === i && i <= daysInMonth) {
           option.selected = true;
         }
         daySelect.appendChild(option);
       }
     }
 
-    // เลือกปี → ยังไม่อัปเดตวัน
-    document.getElementById('birthYear').addEventListener('change', () => {
-      updateDaysInMonth(); // optional: เคลียร์วันถ้าเดือนถูกเลือกแล้ว
-    });
-
-    // เลือกเดือน → ตรวจสอบว่าปีถูกเลือกแล้ว แล้วค่อยอัปเดตวัน
+    // อัปเดตวันเมื่อเลือกปีหรือเดือน
+    document.getElementById('birthYear').addEventListener('change', updateDaysInMonth);
     document.getElementById('birthMonth').addEventListener('change', updateDaysInMonth);
 
-
-
+    // ป้องกันการ zoom ใน iOS
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
       const viewport = document.querySelector('meta[name="viewport"]');
       viewport.setAttribute('content', viewport.content + ', user-scalable=no');
