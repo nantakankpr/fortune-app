@@ -402,6 +402,7 @@ class PaymentController {
         await DBHelper.update('subscriptions', 
           {
             is_active: 1,
+            start_date: new Date(),
             end_date: newEndDate,
             package_name: packageData.name,
             package_duration: parseInt(packageData.duration),

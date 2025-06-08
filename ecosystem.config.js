@@ -5,7 +5,7 @@ module.exports = {
       script: './src/app.js',
       autorestart: true,
       watch: false,
-      max_memory_restart: '1.5G',
+      max_memory_restart: '2G',
       time: true,
       env: {
         NODE_ENV: 'development',
