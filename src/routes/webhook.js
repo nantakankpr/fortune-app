@@ -6,6 +6,5 @@ const {line,config} = require('../services/lineService');
 
 // ==================== WEBHOOK ROUTES ====================
 router.post('/line/webhook', line.middleware(config), LineController.handleWebhook);
-router.post('/payment/webhook', PaymentController.handlePaymentWebhook); // Payment gateway webhook
 
 module.exports = router;

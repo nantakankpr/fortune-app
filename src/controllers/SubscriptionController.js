@@ -1,4 +1,8 @@
 const SubscriptionModel = require('../models/SubscriptionModel');
+const TransactionModel = require('../models/TransactionModel');
+const QRCode = require('qrcode');
+const generatePayload = require('promptpay-qr');
+const config = require('../config/config');
 
 class SubscriptionController {
     
@@ -7,10 +11,10 @@ class SubscriptionController {
      */
     static async hasActiveSubscription(userId) {
         try {
-            const subscription = await SubscriptionModel.getActiveSubscription(userId);
-            return subscription !== null;
+            const result = await SubscriptionModel.hasActiveSubscription(userId);
+            return result;
         } catch (error) {
-            console.error('Error checking active subscription:', error);
+            console.error('❌ Error checking subscription:', error);
             return false;
         }
     }
@@ -18,12 +22,26 @@ class SubscriptionController {
     /**
      * ดึงข้อมูล subscription ที่ active
      */
-    static async getActiveSubscription(userId, useCache = true) {
+    static async getActiveSubscription(userId) {
         try {
-            return await SubscriptionModel.getActiveSubscription(userId, useCache);
+            const result = await SubscriptionModel.getActiveSubscription(userId);
+            return result;
         } catch (error) {
-            console.error('Error getting active subscription:', error);
-            throw error;
+            console.error('❌ Error getting active subscription:', error);
+            return null;
+        }
+    }
+
+    /**
+     * ดึง subscription ล่าสุด (ไม่ว่าจะ active หรือไม่)
+     */
+    static async getLastSubscription(userId) {
+        try {
+            const result = await SubscriptionModel.getLastSubscription(userId);
+            return result;
+        } catch (error) {
+            console.error('❌ Error in SubscriptionController.getLastSubscription:', error);
+            return null;
         }
     }
 
@@ -32,6 +50,15 @@ class SubscriptionController {
      */
     static async createSubscription(userId, packageId, packageData) {
         try {
+            // ตรวจสอบข้อมูลที่จำเป็น
+            if (!userId || !packageId || !packageData) {
+                throw new Error('Missing required subscription data');
+            }
+
+            if (!packageData.name || !packageData.duration) {
+                throw new Error('Invalid package data');
+            }
+
             const startDate = new Date();
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + parseInt(packageData.duration));
@@ -40,40 +67,34 @@ class SubscriptionController {
                 user_id: userId,
                 package_id: packageId,
                 package_name: packageData.name,
+                package_display_name: packageData.name,
+                package_duration: parseInt(packageData.duration),
+                package_price: parseFloat(packageData.price) || 0,
                 is_active: 1,
                 start_date: startDate,
                 end_date: endDate,
-                created_at: new Date()
+                created_at: new Date(),
+                updated_at: new Date()
             };
 
-            return await SubscriptionModel.createSubscription(subscriptionData);
+            const result = await SubscriptionModel.createSubscription(subscriptionData);
+            return result;
         } catch (error) {
-            console.error('Error creating subscription:', error);
+            console.error('❌ Error creating subscription:', error);
             throw error;
         }
     }
 
     /**
-     * ต่ออายุ subscription
+     * ดึงข้อมูล subscription ที่หมดอายุแล้ว
      */
-    static async extendSubscription(userId, additionalDays) {
+    static async getExpiredSubscription(userId) {
         try {
-            const currentSubscription = await SubscriptionModel.getActiveSubscription(userId);
-            
-            if (!currentSubscription) {
-                throw new Error('No active subscription found');
-            }
-
-            const newEndDate = new Date(currentSubscription.end_date);
-            newEndDate.setDate(newEndDate.getDate() + parseInt(additionalDays));
-
-            return await SubscriptionModel.updateSubscription(userId, {
-                end_date: newEndDate,
-                updated_at: new Date()
-            });
+            const result = await SubscriptionModel.getExpiredSubscription(userId);
+            return result;
         } catch (error) {
-            console.error('Error extending subscription:', error);
-            throw error;
+            console.error('❌ Error in SubscriptionController.getExpiredSubscription:', error);
+            return null;
         }
     }
 }

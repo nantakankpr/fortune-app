@@ -1,71 +1,54 @@
-const {DBHelper} = require('../services/ormService');
+const DBHelper = require('../services/ormService');
 
 class SubscriptionModel {
-    static cache = new Map();
-    static CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-    static getCacheKey(userId) {
-        return `subscription_${userId}`;
-    }
-
+    
     /**
-     * เช็คว่า cache หมดอายุหรือยัง
+     * ตรวจสอบว่า user มี subscription ที่ active อยู่หรือไม่
      */
-    static isCacheExpired(cacheData) {
-        return Date.now() > cacheData.expireTime;
-    }
-
-    /**
-     * สร้าง cache data พร้อม expire time
-     */
-    static createCacheData(data) {
-        return {
-            data: data,
-            expireTime: Date.now() + this.CACHE_DURATION,
-            userId: data ? data.user_id : null
-        };
-    }
-
-    /**
-     * ดึงข้อมูล subscription ที่ยังไม่หมดอายุ พร้อม cache
-     */
-    static async getActiveSubscription(userId, useCache = true) {
-        const cacheKey = this.getCacheKey(userId);
-        
-        // ตรวจสอบ cache ก่อน
-        if (useCache && this.cache.has(cacheKey)) {
-            const cached = this.cache.get(cacheKey);
-            
-            // ถ้า cache ยังไม่หมดอายุ
-            if (!this.isCacheExpired(cached)) {
-                return cached.data;
-            } else {
-                // ถ้า cache หมดอายุแล้วให้ลบออก
-                this.cache.delete(cacheKey);
-            }
-        }
-
+    static async hasActiveSubscription(userId) {
         try {
-            const subscriptions = await DBHelper.query(`
-                SELECT s.*, p.display_name as package_display_name, p.duration_days as package_duration, p.price as package_price
-                FROM subscriptions s 
-                LEFT JOIN packages p ON s.package_id = p.id 
+            
+            const query = `
+                SELECT COUNT(*) as count
+                FROM subscriptions 
+                WHERE user_id = ? 
+                AND is_active = 1 
+                AND end_date > NOW()
+            `;
+            
+            const result = await DBHelper.query(query, [userId]);
+            const hasActive = result && result[0] && result[0].count > 0;
+            return hasActive;
+        } catch (error) {
+            console.error('❌ Database error in hasActiveSubscription:', error);
+            return false;
+        }
+    }
+
+    /**
+     * ดึงข้อมูล subscription ที่ active
+     */
+    static async getActiveSubscription(userId) {
+        try {
+            
+            const query = `
+                SELECT s.*, p.name as package_display_name, p.price as package_price, p.duration as package_duration
+                FROM subscriptions s
+                LEFT JOIN packages p ON s.package_id = p.id
                 WHERE s.user_id = ? 
                 AND s.is_active = 1 
-                AND (s.end_date IS NULL OR s.end_date > NOW())
+                AND s.end_date > NOW()
+                ORDER BY s.created_at DESC
                 LIMIT 1
-            `, [userId]);
-
-            const activeSubscription = subscriptions.length > 0 ? subscriptions[0] : null;
-
-            // บันทึกลง cache พร้อม expire time
-            const cacheData = this.createCacheData(activeSubscription);
-            this.cache.set(cacheKey, cacheData);
+            `;
             
-            return activeSubscription;
+            const result = await DBHelper.query(query, [userId]);
+            const subscription = result && result.length > 0 ? result[0] : null;
+            
+            return subscription;
         } catch (error) {
-            console.error('Error getting active subscription:', error);
-            throw error;
+            console.error('❌ Database error in getActiveSubscription:', error);
+            return null;
         }
     }
 
@@ -74,90 +57,76 @@ class SubscriptionModel {
      */
     static async createSubscription(subscriptionData) {
         try {
-            const result = await DBHelper.insert('subscriptions', subscriptionData);
-            
-            // ลบ cache ของ user นี้เฉพาะ
-            this.clearUserCache(subscriptionData.user_id);
-            
+            // ตรวจสอบและทำความสะอาดข้อมูล
+            const cleanData = {
+                user_id: subscriptionData.user_id,
+                package_id: subscriptionData.package_id,
+                package_name: subscriptionData.package_name || null,
+                package_display_name: subscriptionData.package_display_name || subscriptionData.package_name || null,
+                package_duration: subscriptionData.package_duration ? parseInt(subscriptionData.package_duration) : null,
+                package_price: subscriptionData.package_price ? parseFloat(subscriptionData.package_price) : 0,
+                is_active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : 1,
+                start_date: subscriptionData.start_date || new Date(),
+                end_date: subscriptionData.end_date || new Date(),
+                created_at: subscriptionData.created_at || new Date(),
+                updated_at: subscriptionData.updated_at || new Date()
+            };
+
+            // ตรวจสอบข้อมูลที่จำเป็น
+            if (!cleanData.user_id || !cleanData.package_id) {
+                throw new Error('Missing required fields: user_id and package_id');
+            }
+
+            const result = await DBHelper.insert('subscriptions', cleanData);
             return result;
         } catch (error) {
-            console.error('Error creating subscription:', error);
+            console.error('❌ Database error in createSubscription:', error);
             throw error;
         }
     }
 
     /**
-     * อัพเดท subscription
-     */
-    static async updateSubscription(userId, updateData) {
-        try {
-            const result = await DBHelper.update('subscriptions', updateData, { user_id: userId });
-            
-            // ลบ cache ของ user นี้เฉพาะ
-            this.clearUserCache(userId);
-            
-            return result;
-        } catch (error) {
-            console.error('Error updating subscription:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * ปิด subscription ที่หมดอายุ
+     * ปิด subscription ที่หมดอายุแล้ว
      */
     static async deactivateExpiredSubscriptions() {
         try {
-            const result = await DBHelper.query(`
+            const query = `
                 UPDATE subscriptions 
-                SET is_active = 0, updated_at = NOW() 
+                SET is_active = 0, updated_at = NOW()
                 WHERE is_active = 1 
-                AND end_date < NOW()
-            `);
+                AND end_date <= NOW()
+            `;
             
-            // ลบ cache ที่เกี่ยวข้อง โดยดูจาก affected rows
-            if (result.affectedRows > 0) {
-                this.clearAllCache();
-            }
-            
-            return result;
+            const result = await DBHelper.query(query);
+            return result.affectedRows;
         } catch (error) {
-            console.error('Error deactivating expired subscriptions:', error);
+            console.error('❌ Error deactivating expired subscriptions:', error);
             throw error;
         }
     }
 
     /**
-     * ลบ cache ของ user คนใดคนหนึ่ง
+     * ดึงข้อมูล subscription ที่หมดอายุแล้ว
      */
-    static clearUserCache(userId) {
-        const cacheKey = this.getCacheKey(userId);
-        if (this.cache.has(cacheKey)) {
-            this.cache.delete(cacheKey);
+    static async getExpiredSubscription(userId) {
+        try {
+            const query = `
+                SELECT 
+                    s.*,
+                    s.package_name as package_display_name
+                FROM subscriptions s 
+                WHERE s.user_id = ? 
+                AND s.end_date < NOW()
+                ORDER BY s.end_date DESC 
+                LIMIT 1
+            `;
+            
+            const result = await DBHelper.query(query, [userId]);
+            return result && result.length > 0 ? result[0] : null;
+        } catch (error) {
+            console.error('❌ Error in getExpiredSubscription:', error);
+            throw error;
         }
-    }
-
-    /**
-     * ลบ cache ทั้งหมด
-     */
-    static clearAllCache() {
-        this.cache.clear();
-    }
-
-    /**
-     * ลบ cache ที่หมดอายุอัตโนมัติ
-     */
-    static cleanExpiredCache() {
-        let cleanedCount = 0;
-        
-        for (const [key, cacheData] of this.cache.entries()) {
-            if (this.isCacheExpired(cacheData)) {
-                this.cache.delete(key);
-                cleanedCount++;
-            }
-        }
-        
-        return cleanedCount;
     }
 }
 

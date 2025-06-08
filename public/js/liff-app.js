@@ -18,17 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await res.json();
 
             if (data.loggedIn) {
-                // เช็คว่ามี subscription หรือไม่
-                if (!data.hasSubscription) {
-                    // ยังไม่มี subscription ให้ไปหน้า payment
-                    window.location.href = '/order/payment';
-                    return;
-                }
-                
-                // มี subscription แล้วให้ปิด LIFF
-                if (liff.isInClient()) {
-                    window.location.href = '/order/succeeded';
-                }
+                // ใช้ suggestedRedirect ที่ backend คำนวณให้แล้ว
+                const redirectUrl = data.suggestedRedirect || '/order/payment';
+                window.location.href = redirectUrl;
                 return;
             }
 

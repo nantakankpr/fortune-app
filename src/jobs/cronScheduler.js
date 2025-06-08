@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const SubscriptionJob = require('./subscriptionJob');
+const DailyFortuneJob = require('./dailyFortuneJob');
 
 class CronScheduler {
     static jobs = new Map();
@@ -10,17 +10,18 @@ class CronScheduler {
     static initializeJobs() {
         console.log('🕒 Initializing cron jobs...');
 
-        // ปิด subscription ที่หมดอายุทุก 1 ชั่วโมง
-        this.scheduleJob('subscription-cleanup', '0 * * * *', async () => {
-            await SubscriptionJob.deactivateExpiredSubscriptions();
+        // ส่งข้อความ daily fortune ทุกวันเวลา 8:00 น.
+        this.scheduleJob('daily-fortune', '0 8 * * *', async () => {
+            await DailyFortuneJob.sendDailyFortune();
         });
 
-        // ทำความสะอาด expired cache ทุก 30 นาที
-        this.scheduleJob('cache-cleanup', '*/30 * * * *', () => {
-            SubscriptionJob.cleanExpiredCache();
-        });
+        // ส่งข้อความ daily fortune ทุก 1 นาที (testing mode)
+        // this.scheduleJob('daily-fortune', '* * * * *', async () => {
+        //     console.log('🧪 Running daily fortune in test mode (every minute)');
+        //     await DailyFortuneJob.sendDailyFortuneMessages();
+        // });
 
-        console.log(`✅ Initialized ${this.jobs.size} cron jobs`);
+        console.log('✅ Cron jobs initialized successfully');
     }
 
     /**
@@ -28,22 +29,29 @@ class CronScheduler {
      */
     static scheduleJob(name, cronPattern, jobFunction) {
         try {
-            const task = cron.schedule(cronPattern, jobFunction, {
-                scheduled: true,
+            if (this.jobs.has(name)) {
+                this.stopJob(name);
+            }
+
+            const job = cron.schedule(cronPattern, jobFunction, {
+                scheduled: false,
                 timezone: 'Asia/Bangkok'
             });
 
             this.jobs.set(name, {
-                task: task,
+                job: job,
                 pattern: cronPattern,
-                name: name,
-                isRunning: task.running || false
+                function: jobFunction,
+                status: 'stopped'
             });
 
-            console.log(`📅 Scheduled job '${name}' with pattern: ${cronPattern}`);
-            return task;
+            job.start();
+            this.jobs.get(name).status = 'running';
+
+            console.log(`✅ Job "${name}" scheduled with pattern: ${cronPattern}`);
+            return job;
         } catch (error) {
-            console.error(`❌ Failed to schedule job '${name}':`, error);
+            console.error(`❌ Error scheduling job "${name}":`, error);
             throw error;
         }
     }
@@ -52,52 +60,47 @@ class CronScheduler {
      * หยุด cron job
      */
     static stopJob(name) {
-        const job = this.jobs.get(name);
-        if (job) {
-            job.task.stop();
-            console.log(`⏹️  Stopped job '${name}'`);
-            return true;
+        const jobData = this.jobs.get(name);
+        if (jobData) {
+            jobData.job.stop();
+            jobData.status = 'stopped';
+            console.log(`🛑 Job "${name}" stopped`);
+        } else {
+            console.log(`⚠️ Job "${name}" not found`);
         }
-        console.warn(`⚠️  Job '${name}' not found`);
-        return false;
     }
 
     /**
      * เริ่ม cron job ที่หยุดไว้
      */
     static startJob(name) {
-        const job = this.jobs.get(name);
-        if (job) {
-            job.task.start();
-            console.log(`▶️  Started job '${name}'`);
-            return true;
+        const jobData = this.jobs.get(name);
+        if (jobData) {
+            jobData.job.start();
+            jobData.status = 'running';
+            console.log(`▶️ Job "${name}" started`);
+        } else {
+            console.log(`⚠️ Job "${name}" not found`);
         }
-        console.warn(`⚠️  Job '${name}' not found`);
-        return false;
     }
 
     /**
      * รัน job ทันที (manual trigger)
      */
     static async runJobNow(name) {
-        const job = this.jobs.get(name);
-        if (job) {
-            console.log(`🚀 Manually triggering job '${name}'`);
+        const jobData = this.jobs.get(name);
+        if (jobData) {
+            console.log(`🏃 Running job "${name}" manually...`);
             try {
-                if (name === 'subscription-cleanup') {
-                    await SubscriptionJob.deactivateExpiredSubscriptions();
-                } else if (name === 'cache-cleanup') {
-                    SubscriptionJob.cleanExpiredCache();
-                }
-                console.log(`✅ Job '${name}' completed successfully`);
-                return true;
+                await jobData.function();
+                console.log(`✅ Job "${name}" completed successfully`);
             } catch (error) {
-                console.error(`❌ Job '${name}' failed:`, error);
+                console.error(`❌ Job "${name}" failed:`, error);
                 throw error;
             }
+        } else {
+            console.log(`⚠️ Job "${name}" not found`);
         }
-        console.warn(`⚠️  Job '${name}' not found`);
-        return false;
     }
 
     /**
@@ -105,15 +108,15 @@ class CronScheduler {
      */
     static getJobsStatus() {
         const status = {};
-        
-        for (const [name, job] of this.jobs.entries()) {
+        for (const [name, jobData] of this.jobs.entries()) {
             status[name] = {
-                name: job.name,
-                pattern: job.pattern,
-                isRunning: job.task.running || false
+                pattern: jobData.pattern,
+                status: jobData.status,
+                nextRun: jobData.status === 'running' ?
+                    'Based on cron pattern' :
+                    'Job is stopped'
             };
         }
-
         return status;
     }
 
@@ -122,25 +125,23 @@ class CronScheduler {
      */
     static stopAllJobs() {
         console.log('🛑 Stopping all cron jobs...');
-        
-        for (const [name, job] of this.jobs.entries()) {
-            job.task.stop();
+        for (const [name, jobData] of this.jobs.entries()) {
+            jobData.job.stop();
+            jobData.status = 'stopped';
         }
-        
-        console.log(`✅ Stopped ${this.jobs.size} cron jobs`);
+        console.log('✅ All jobs stopped');
     }
 
     /**
      * เริ่ม jobs ทั้งหมด
      */
     static startAllJobs() {
-        console.log('▶️  Starting all cron jobs...');
-        
-        for (const [name, job] of this.jobs.entries()) {
-            job.task.start();
+        console.log('▶️ Starting all cron jobs...');
+        for (const [name, jobData] of this.jobs.entries()) {
+            jobData.job.start();
+            jobData.status = 'running';
         }
-        
-        console.log(`✅ Started ${this.jobs.size} cron jobs`);
+        console.log('✅ All jobs started');
     }
 }
 

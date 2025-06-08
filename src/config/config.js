@@ -22,5 +22,5 @@ module.exports = {
   LIFF_ID: process.env.LIFF_ID || "2007423411-wVYbLZ63",
 
   // EasySlip config
-  EASYSLIP_API_KEY: process.env.EASYSLIP_API_KEY || '675cbbbf-3b2a-4cc8-a44b-17266d6f0036'
+  EASYSLIP_API_KEY: process.env.EASYSLIP_API_KEY || '03a2b257-cde1-46c0-b669-aeed4fb32049'
 };

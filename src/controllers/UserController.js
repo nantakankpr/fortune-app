@@ -1,4 +1,4 @@
-const { DBHelper } = require('../services/ormService');
+const DBHelper = require('../services/ormService');
 
 class UserController {
   static async findByUserId(userId) {

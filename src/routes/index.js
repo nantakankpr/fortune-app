@@ -1,14 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const mdw = require('../middlewares');
-
-// Controllers
 const WebController = require('../controllers/WebController');
 const AuthController = require('../controllers/AuthController');
 const PaymentController = require('../controllers/PaymentController');
 const BackendController = require('../controllers/BackendController');
 
 // ==================== WEB ROUTES ====================
+// router.get('/nctv4', function(req, res) {
+//  res.render('user/test',{});
+// });
+//hello world
+router.get('/', (req, res) => {
+  return res.send('Hello World');
+});
 router.get('/init', mdw.csrfProtection, WebController.showInitPage);
 router.get('/register', mdw.csrfProtection, WebController.showRegisterPage);
 
@@ -17,13 +22,21 @@ router.get('/auth/session', AuthController.checkSession);
 router.post('/auth/login', mdw.csrfProtection, AuthController.login);
 router.post('/auth/register', mdw.csrfProtection, AuthController.register);
 
-// ==================== ORDER/PAYMENT ROUTES ====================
-router.get('/order/payment', mdw.auth(['member']), PaymentController.showPaymentPage);
+// ==================== ORDER ROUTES ====================
+// Payment Routes
+router.get('/order/payment', mdw.auth(['member']), mdw.csrfProtection, PaymentController.showPaymentPage);
 router.post('/order/payment', mdw.auth(['member']), mdw.csrfProtection, PaymentController.createPayment);
+
+// Renewal Routes
+router.get('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.showRenewPage);
+router.post('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.renewSubscription);
+
+// Status & Management Routes
 router.post('/order/status', mdw.auth(['member']), PaymentController.checkOrderStatus);
-router.post('/order/cancel', mdw.auth(['member']), PaymentController.cancelOrder);
+
+// Success & Result Pages
 router.get('/order/succeeded', mdw.auth(['member']), PaymentController.showOrderSuccessPage);
-router.get('/order/canceled', mdw.auth(['member']), PaymentController.showOrderCanceledPage);
+router.get('/order/renew-success', mdw.auth(['member']), PaymentController.showRenewSuccessPage);
 
 // ==================== ADMIN ROUTES ====================
 router.get('/admin/login', mdw.csrfProtection, BackendController.showLoginPage);

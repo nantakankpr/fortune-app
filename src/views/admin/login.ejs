@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title>เข้าสู่ระบบ - Admin Dashboard</title>
     <style>
         * {
@@ -276,19 +277,21 @@
             
             // Hide error message
             errorMessage.style.display = 'none';
-            
-            // Validate credentials
-            if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-                // Success - store login status (หมายเหตุ: ในสถานการณ์จริงไม่ควรใช้ localStorage สำหรับข้อมูลความปลอดภัย)
-                const loginData = {
-                    isLoggedIn: true,
-                    adminUser: username,
-                    loginTime: new Date().toISOString()
-                };
-                
-                // Store in memory for this demo
-                window.sessionData = loginData;
-                
+            fetch('/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+                return response.json();
+            })
+            .then(data => {
                 // Show success feedback
                 const button = loginForm.querySelector('.login-button');
                 const originalText = button.textContent;
@@ -312,7 +315,8 @@
                         button.disabled = false;
                     }, 1500);
                 }, 1000);
-            } else {
+            })
+            .catch(error => {
                 // Show error
                 errorMessage.style.display = 'block';
                 
@@ -324,21 +328,13 @@
                 
                 // Focus on username field
                 usernameInput.focus();
-            }
+            });
         });
 
         // Auto-focus username field when page loads
         window.addEventListener('load', () => {
             usernameInput.focus();
         });
-
-        // Check if already logged in
-        if (window.sessionData?.isLoggedIn) {
-            const notice = document.createElement('div');
-            notice.className = 'success-message';
-            notice.textContent = 'คุณเข้าสู่ระบบอยู่แล้ว';
-            loginForm.parentNode.insertBefore(notice, loginForm);
-        }
 
         // Handle keyboard navigation
         document.addEventListener('keydown', function(e) {

@@ -1,7 +1,7 @@
 const CronScheduler = require('./cronScheduler');
-const SubscriptionJob = require('./subscriptionJob');
+const DailyFortuneJob = require('./dailyFortuneJob');
 
 module.exports = {
     CronScheduler,
-    SubscriptionJob
+    DailyFortuneJob
 };

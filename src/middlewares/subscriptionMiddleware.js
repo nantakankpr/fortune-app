@@ -13,6 +13,7 @@ async function requireActiveSubscription(req, res, next) {
             });
         }
 
+        // ตรวจสอบ subscription แบบ real-time ผ่าน cache ใน SubscriptionModel
         const hasActive = await SubscriptionController.hasActiveSubscription(req.session.user.id);
         
         if (!hasActive) {
@@ -21,12 +22,6 @@ async function requireActiveSubscription(req, res, next) {
                 error: 'Active subscription required',
                 redirect: '/order/payment'
             });
-        }
-
-        // อัพเดท subscription data ใน session ถ้าจำเป็น
-        if (!req.session.user.subscriptionData) {
-            const activeSubscription = await SubscriptionController.getActiveSubscription(req.session.user.id);
-            req.session.user.subscriptionData = activeSubscription;
         }
 
         next();
@@ -40,23 +35,29 @@ async function requireActiveSubscription(req, res, next) {
 }
 
 /**
- * Middleware สำหรับเช็คและอัพเดท subscription status
+ * Middleware สำหรับ pages ที่ต้องการข้อมูล subscription แต่ไม่บังคับ
  */
-async function refreshSubscriptionStatus(req, res, next) {
+async function optionalSubscriptionCheck(req, res, next) {
     try {
-        if (req.session.user && req.session.user.id) {
-            // ดึงข้อมูล subscription ใหม่ (ไม่ใช้ cache)
-            const activeSubscription = await SubscriptionController.getActiveSubscription(req.session.user.id, false);
-            req.session.user.subscriptionData = activeSubscription;
+        if (req.session?.user?.id) {
+            const hasActive = await SubscriptionController.hasActiveSubscription(req.session.user.id);
+            req.hasActiveSubscription = hasActive;
+            
+            if (hasActive) {
+                const activeSubscription = await SubscriptionController.getActiveSubscription(req.session.user.id);
+                req.subscriptionData = activeSubscription;
+            }
         }
         next();
     } catch (error) {
-        console.error('Refresh subscription middleware error:', error);
-        next(); // ให้ continue ต่อไปแม้มี error
+        console.error('Optional subscription check error:', error);
+        req.hasActiveSubscription = false;
+        req.subscriptionData = null;
+        next(); // ไม่ block request
     }
 }
 
 module.exports = {
     requireActiveSubscription,
-    refreshSubscriptionStatus
+    optionalSubscriptionCheck
 };

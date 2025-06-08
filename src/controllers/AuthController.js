@@ -1,33 +1,46 @@
 const UserController = require('./UserController');
 const SubscriptionController = require('./SubscriptionController');
 const { verifyIdToken } = require("../services/lineService");
-const { DBHelper } = require('../services/ormService');
 
 class AuthController {
     static async checkSession(req, res) {
         try {
             if (req.session && req.session.user) {
-                // ใช้ SubscriptionController เพื่อเช็ค subscription ล่าสุด
-                const hasActiveSubscription = await SubscriptionController.hasActiveSubscription(req.session.user.id);
-                console.log("User has active subscription:", hasActiveSubscription);
+                const userId = req.session.user.id;
                 
-                // อัพเดท subscription data ใน session ถ้าจำเป็น
-                if (hasActiveSubscription && !req.session.user.subscriptionData) {
-                    const activeSubscription = await SubscriptionController.getActiveSubscription(req.session.user.id);
-                    req.session.user.subscriptionData = activeSubscription;
-                } else if (!hasActiveSubscription) {
-                    req.session.user.subscriptionData = null;
+                // เช็คสถานะ subscription แบบครบถ้วน
+                const hasActiveSubscription = await SubscriptionController.hasActiveSubscription(userId);
+                const expiredSubscription = await SubscriptionController.getExpiredSubscription(userId);
+                
+                // กำหนดสถานะและ redirect URL
+                let subscriptionStatus = 'none'; // none, active, expired
+                let suggestedRedirect = '/order/payment';
+                
+                if (hasActiveSubscription) {
+                    subscriptionStatus = 'active';
+                    suggestedRedirect = '/order/succeeded';
+                } else if (expiredSubscription) {
+                    subscriptionStatus = 'expired';
+                    suggestedRedirect = '/order/renew';
                 }
-
+                
                 return res.json({
                     loggedIn: true,
                     user: req.session.user,
-                    hasSubscription: hasActiveSubscription
+                    hasSubscription: hasActiveSubscription, // backward compatibility
+                    subscription: {
+                        status: subscriptionStatus,
+                        hasActive: hasActiveSubscription,
+                        hasExpired: !!expiredSubscription,
+                        canRenew: !hasActiveSubscription && !!expiredSubscription,
+                        canPurchase: !hasActiveSubscription && !expiredSubscription
+                    },
+                    suggestedRedirect: suggestedRedirect
                 });
             }
             return res.json({ loggedIn: false });
         } catch (error) {
-            console.error("Session check error:", error);
+            console.error("❌ Session check error:", error);
             return res.status(500).json({ error: "Session check failed" });
         }
     }
@@ -54,10 +67,7 @@ class AuthController {
                 });
             }
 
-            // ใช้ SubscriptionController แทนการ query ตรงๆ
-            const activeSubscription = await SubscriptionController.getActiveSubscription(users[0].id);
-            console.log("Active subscription data:", activeSubscription);
-
+            // เก็บข้อมูล user ใน session
             req.session.user = {
                 id: userData.sub,
                 line_name: userData.name,
@@ -66,25 +76,38 @@ class AuthController {
                 phone: users[0].phone,
                 created_at: users[0].created_at,
                 picture: userData.picture,
-                subscriptionData: activeSubscription
+                role: 'member'
             };
-            req.session.user.role = 'member';
 
-            // ตรวจสอบ subscription และ redirect ตามเงื่อนไข
-            if (!activeSubscription) {
-                return res.json({
-                    success: true,
-                    redirect: '/order/payment'
-                });
-            } else {
+            // ตรวจสอบ subscription และ redirect ตามสถานะ
+            const hasActiveSubscription = await SubscriptionController.hasActiveSubscription(userData.sub);
+
+            if (hasActiveSubscription) {
+                // มี subscription ที่ active อยู่
                 return res.json({
                     success: true,
                     redirect: '/order/succeeded'
                 });
+            } else {
+                // ไม่มี active subscription - เช็คว่ามี expired subscription หรือไม่
+                const expiredSubscription = await SubscriptionController.getExpiredSubscription(userData.sub);
+                if (expiredSubscription) {
+                    // มี subscription ที่หมดอายุ - redirect ไปหน้าต่ออายุ
+                    return res.json({
+                        success: true,
+                        redirect: '/order/renew'
+                    });
+                } else {
+                    // ไม่มี subscription เลย - redirect ไปหน้าสมัครใหม่
+                    return res.json({
+                        success: true,
+                        redirect: '/order/payment'
+                    });
+                }
             }
 
         } catch (error) {
-            console.error("Login error:", error);
+            console.error("❌ Login error:", error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -168,6 +191,8 @@ class AuthController {
             }
 
             const users = await UserController.findByUserId(userData.sub);
+            
+            // เก็บข้อมูล user ใน session
             req.session.user = {
                 id: userData.sub,
                 line_name: userData.name,
@@ -176,13 +201,12 @@ class AuthController {
                 phone: users[0].phone,
                 created_at: users[0].created_at,
                 picture: userData.picture,
-                subscriptionData: null // user ใหม่ยังไม่มี subscription
+                role: 'member'
             };
-            req.session.user.role = 'member';
 
             return res.json({ success: true, redirect: '/order/payment' });
         } catch (error) {
-            console.error("Registration error:", error);
+            console.error("❌ Registration error:", error);
             return res.status(500).json({ error: "Registration failed" });
         }
     }

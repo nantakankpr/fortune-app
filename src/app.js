@@ -103,7 +103,6 @@ app.listen(PORT, () => {
   
   // แสดงสถานะ cron jobs
   const jobsStatus = CronScheduler.getJobsStatus();
-  console.log('📅 Cron Jobs Status:', jobsStatus);
 });
 
 // 🛑 Graceful shutdown
