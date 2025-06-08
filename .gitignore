@@ -8,6 +8,13 @@ logs/
 # Environment variables
 .env
 
+# Configuration files
+config/
+src/config/
+*.config.js
+!webpack.config.js
+!jest.config.js
+
 # OS generated files
 .DS_Store
 Thumbs.db
@@ -29,4 +36,20 @@ jspm_packages/
 *.sln
 
 # Coverage directory
-node_modules/
+coverage/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Temporary folders
+tmp/
+temp/
