@@ -9,9 +9,9 @@ logs/
 .env
 
 # Configuration files
-config/
-src/config/
-*.config.js
+# config/
+# src/config/
+# *.config.js
 !webpack.config.js
 !jest.config.js
 
