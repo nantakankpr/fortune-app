@@ -48,6 +48,13 @@ function auth(allowedRoles = []) {
 // Admin Authentication middleware - เช็คจาก req.session.userData
 function authAdmin(req, res, next) {
     try {
+        // เพิ่ม headers เพื่อป้องกัน browser cache
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+
         // เช็คว่ามี session และ userData หรือไม่
         if (!req.session || !req.session.userData) {
             if (req.xhr || req.headers.accept?.includes('application/json')) {
@@ -69,33 +76,19 @@ function authAdmin(req, res, next) {
                     error: 'Admin access required'
                 });
             }
-            return res.status(403).send('Admin access required');
-        }
-
-        // เช็คว่า session ยังไม่หมดอายุ (optional)
-        if (req.session.userData.expires && new Date() > new Date(req.session.userData.expires)) {
-            req.session.destroy();
-            if (req.xhr || req.headers.accept?.includes('application/json')) {
-                return res.status(401).json({
-                    success: false,
-                    error: 'Session expired',
-                    redirect: '/admin/login'
-                });
-            }
             return res.redirect('/admin/login');
         }
 
-        // ส่งต่อไปยัง middleware หรือ route handler ถัดไป
         next();
     } catch (error) {
-        console.error('Admin auth middleware error:', error);
+        console.log('Admin auth middleware error:', error);
         if (req.xhr || req.headers.accept?.includes('application/json')) {
             return res.status(500).json({ 
                 success: false, 
                 error: 'Admin authentication check failed' 
             });
         }
-        return res.status(500).send('Authentication error');
+        return res.redirect('/admin/login');
     }
 }
 
