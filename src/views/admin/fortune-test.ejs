@@ -1,10 +1,13 @@
 <!-- สร้างไฟล์ src/views/admin/fortune-test.ejs -->
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'ทดสอบ Fortune - Admin' %></title>
+    <title>
+        <%= title || 'ทดสอบ Fortune - Admin' %>
+    </title>
     <style>
         * {
             margin: 0;
@@ -26,7 +29,7 @@
             position: relative;
         }
 
-        /* Sidebar - เหมือนกับ transactions.ejs */
+        /* Sidebar */
         .sidebar {
             width: 280px;
             background: white;
@@ -80,12 +83,12 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 16px 20px;
+            padding: 20px 20px;
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
-            font-size: 15px;
+            font-size: 16px;
         }
 
         .nav-item:hover,
@@ -96,16 +99,12 @@
         }
 
         .nav-item::before {
-            margin-right: 12px;
-            font-size: 16px;
+            margin-right: 15px;
+            font-size: 18px;
         }
 
         .nav-item.transactions::before {
             content: '📊';
-        }
-
-        .nav-item.members::before {
-            content: '👥';
         }
 
         .nav-item.fortune-test::before {
@@ -198,6 +197,36 @@
         .logout-btn:hover {
             background: #d32f2f;
             transform: translateY(-1px);
+        }
+
+        /* Admin Actions */
+        .admin-actions {
+            padding: 16px 24px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .add-admin-btn {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-admin-btn:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
         }
 
         /* Page Content */
@@ -427,6 +456,228 @@
             color: #856404;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            position: relative;
+            z-index: 10001;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(90vh - 140px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .form-group input:invalid {
+            border-color: #f44336;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            color: #666;
+        }
+
+        .password-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* เพิ่ม CSS สำหรับ page header layout */
+        .page-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+
+        .page-header-content {
+            flex: 1;
+        }
+
+        /* ปรับ responsive สำหรับปุ่มใน page content */
+        @media (max-width: 767px) {
+            .page-header-flex {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .add-admin-btn {
+                align-self: flex-start;
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 767px) {
             .sidebar {
@@ -475,6 +726,26 @@
             .user-name {
                 display: none;
             }
+
+            .admin-actions {
+                padding: 12px 16px;
+            }
+
+            .add-admin-btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .modal-header,
+            .modal-body,
+            .modal-footer {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -490,8 +761,10 @@
                 <h2 class="sidebar-title">Admin Dashboard</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="/admin/transactions" class="nav-item transactions" onclick="setActivePage('transactions')">จัดการธุรกรรม</a>
-                <a href="/admin/fortune-test" class="nav-item fortune-test active" onclick="setActivePage('fortune-test')">ทดสอบ Fortune</a>
+                <a href="/admin/transactions" class="nav-item transactions"
+                    onclick="setActivePage('transactions')">จัดการธุรกรรม</a>
+                <a href="/admin/fortune-test" class="nav-item fortune-test active"
+                    onclick="setActivePage('fortune-test')">ทดสอบ Fortune</a>
             </nav>
         </aside>
 
@@ -514,8 +787,15 @@
             <!-- Page Content -->
             <div class="page-content">
                 <div class="page-header">
-                    <h1 class="page-title">🔮 ทดสอบ Daily Fortune</h1>
-                    <p class="page-subtitle">จัดการและทดสอบการส่ง fortune ประจำวัน</p>
+                    <div class="page-header-flex">
+                        <div class="page-header-content">
+                            <h1 class="page-title">ทดสอบ Daily Fortune</h1>
+                            <p class="page-subtitle">จัดการและทดสอบการส่ง fortune ประจำวัน</p>
+                        </div>
+                        <button class="add-admin-btn" onclick="openAddAdminModal()">
+                             เพิ่มผู้ดูแล
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Broadcast Section -->
@@ -544,51 +824,101 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
-                                    <% users.forEach(user => { %>
-                                    <tr>
-                                        <td><strong><%= user.line_name || 'ไม่ระบุ' %></strong></td>
-                                        <td><%= user.line_user_id || 'ไม่ระบุ' %></td>
-                                        <td><%= user.full_name || 'ไม่ระบุ' %></td>
-                                        <td>
-                                            <span class="status-badge <%= user.is_active ? 'status-active' : 'status-inactive' %>">
-                                                <%= user.is_active ? 'Active' : 'Inactive' %>
-                                            </span>
-                                        </td>
-                                        <td><%= user.package_name || 'ไม่มี' %></td>
-                                        <td>
-                                            <div class="fortune-form">
-                                                <input type="date" 
-                                                       class="date-input" 
-                                                       id="date_<%= user.line_user_id %>" 
-                                                       value="<%= new Date().toISOString().split('T')[0] %>"
-                                                       onchange="checkExistingFortune('<%= user.line_user_id %>')">
-                                                <textarea class="fortune-input" 
-                                                          id="content_<%= user.line_user_id %>" 
-                                                          placeholder="เนื้อหา fortune สำหรับ <%= user.line_name %>..."></textarea>
-                                                <button class="create-btn" 
+                                <% if (typeof users !=='undefined' && users && users.length> 0) { %>
+                                    <% users.forEach(user=> { %>
+                                        <tr>
+                                            <td><strong>
+                                                    <%= user.line_name || 'ไม่ระบุ' %>
+                                                </strong></td>
+                                            <td>
+                                                <%= user.line_user_id || 'ไม่ระบุ' %>
+                                            </td>
+                                            <td>
+                                                <%= user.full_name || 'ไม่ระบุ' %>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="status-badge <%= user.is_active ? 'status-active' : 'status-inactive' %>">
+                                                    <%= user.is_active ? 'Active' : 'Inactive' %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <%= user.package_name || 'ไม่มี' %>
+                                            </td>
+                                            <td>
+                                                <div class="fortune-form">
+                                                    <input type="date" class="date-input"
+                                                        id="date_<%= user.line_user_id %>"
+                                                        value="<%= new Date().toISOString().split('T')[0] %>"
+                                                        onchange="checkExistingFortune('<%= user.line_user_id %>')">
+                                                    <textarea class="fortune-input"
+                                                        id="content_<%= user.line_user_id %>"
+                                                        placeholder="เนื้อหา fortune สำหรับ <%= user.line_name %>..."></textarea>
+                                                    <button class="create-btn"
                                                         onclick="createFortune('<%= user.line_user_id %>')">
-                                                    สร้าง
-                                                </button>
-                                            </div>
-                                            <div id="existing_<%= user.line_user_id %>"></div>
-                                            <div id="result_<%= user.line_user_id %>"></div>
-                                        </td>
-                                    </tr>
-                                    <% }); %>
-                                <% } else { %>
-                                    <tr>
-                                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
-                                            <div>ไม่พบข้อมูลสมาชิก</div>
-                                        </td>
-                                    </tr>
-                                <% } %>
+                                                        สร้าง
+                                                    </button>
+                                                </div>
+                                                <div id="existing_<%= user.line_user_id %>"></div>
+                                                <div id="result_<%= user.line_user_id %>"></div>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="6"
+                                                        style="text-align: center; padding: 40px; color: #666;">
+                                                        <div>ไม่พบข้อมูลสมาชิก</div>
+                                                    </td>
+                                                </tr>
+                                                <% } %>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Add Admin Modal -->
+    <div class="modal" id="addAdminModal">
+        <div class="modal-overlay" id="addAdminOverlay" onclick="closeAddAdminModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>เพิ่มผู้ดูแลระบบ</h3>
+                <button class="modal-close" onclick="closeAddAdminModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addAdminForm">
+                    <div class="form-group">
+                        <label for="adminUsername">ชื่อผู้ใช้ *</label>
+                        <input type="text" id="adminUsername" name="username" required maxlength="50" minlength="3"
+                            pattern="[a-zA-Z0-9_]{3,50}" placeholder="ชื่อผู้ใช้ (3-50 ตัวอักษร)" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">รหัสผ่าน *</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="adminPassword" name="password" required minlength="8"
+                                maxlength="128" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)"
+                                autocomplete="new-password">
+                            <button type="button" class="password-toggle" onclick="toggleAdminPassword()">👁️</button>
+                        </div>
+                        <small class="password-hint">รหัสผ่านควรมีตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข
+                            และอักขระพิเศษ</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminEmail">อีเมล *</label>
+                        <input type="email" id="adminEmail" name="email" required maxlength="255"
+                            placeholder="admin@example.com" autocomplete="email">
+                    </div>
+                </form>
+                <div id="addAdminResult"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeAddAdminModal()">ยกเลิก</button>
+                <button type="button" class="btn-submit" onclick="submitAddAdmin()">เพิ่มผู้ดูแล</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -599,15 +929,138 @@
         const toggleSidebar = document.getElementById('toggleSidebar');
         const toggleIcon = document.getElementById('toggleIcon');
 
-        // ทดสอบ broadcast
+        // ===== MODAL FUNCTIONS =====
+        function openAddAdminModal() {
+            const modal = document.getElementById('addAdminModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                document.getElementById('adminUsername').focus();
+            }, 100);
+
+            document.getElementById('addAdminResult').innerHTML = '';
+            document.getElementById('addAdminForm').reset();
+        }
+
+        function closeAddAdminModal() {
+            const modal = document.getElementById('addAdminModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function toggleAdminPassword() {
+            const passwordInput = document.getElementById('adminPassword');
+            const toggleBtn = document.querySelector('.password-toggle');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        }
+
+        function sanitizeInput(input) {
+            return input
+                .replace(/[<>]/g, '')
+                .replace(/['"]/g, '')
+                .replace(/javascript:/gi, '')
+                .trim();
+        }
+
+        function validatePassword(password) {
+            const minLength = 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+
+            if (password.length < minLength) {
+                return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+            }
+
+            if (!hasUpper || !hasLower || !hasNumber) {
+                return 'รหัสผ่านต้องมีตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข';
+            }
+
+            return null;
+        }
+
+        async function submitAddAdmin() {
+            const form = document.getElementById('addAdminForm');
+            const submitBtn = document.querySelector('.btn-submit');
+            const resultDiv = document.getElementById('addAdminResult');
+
+            const username = sanitizeInput(document.getElementById('adminUsername').value);
+            const password = document.getElementById('adminPassword').value;
+            const email = sanitizeInput(document.getElementById('adminEmail').value);
+
+            if (!username || !password || !email) {
+                resultDiv.innerHTML = '<div class="alert alert-error">กรุณากรอกข้อมูลให้ครบถ้วน</div>';
+                return;
+            }
+
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                resultDiv.innerHTML = `<div class="alert alert-error">${passwordError}</div>`;
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                resultDiv.innerHTML = '<div class="alert alert-error">รูปแบบอีเมลไม่ถูกต้อง</div>';
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'กำลังเพิ่ม...';
+                resultDiv.innerHTML = '<div class="alert alert-info">กำลังสร้างผู้ดูแล...</div>';
+
+                const response = await fetch('/admin/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success">✅ เพิ่มผู้ดูแลสำเร็จ!</div>';
+                    form.reset();
+
+                    setTimeout(() => {
+                        closeAddAdminModal();
+                    }, 1000);
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error || 'ไม่สามารถเพิ่มผู้ดูแลได้'}</div>`;
+                }
+
+            } catch (error) {
+                console.error('Add admin error:', error);
+                resultDiv.innerHTML = '<div class="alert alert-error">❌ เกิดข้อผิดพลาดในการเชื่อมต่อ</div>';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'เพิ่มผู้ดูแล';
+            }
+        }
+
+        // ===== FORTUNE FUNCTIONS =====
         async function testBroadcast() {
             const btn = document.getElementById('broadcastBtn');
             const result = document.getElementById('broadcastResult');
-            
+
             btn.disabled = true;
             btn.textContent = '🔄 กำลังส่ง...';
             result.innerHTML = '<div class="alert alert-info">กำลังส่ง broadcast...</div>';
-            
+
             try {
                 const response = await fetch('/admin/api/fortune/broadcast', {
                     method: 'POST',
@@ -616,7 +1069,7 @@
                     }
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
                     result.innerHTML = `
                         <div class="alert alert-success">
@@ -632,22 +1085,21 @@
             } catch (error) {
                 result.innerHTML = `<div class="alert alert-error">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
             }
-            
+
             btn.disabled = false;
             btn.textContent = '🚀 ส่ง Broadcast ทดสอบ';
         }
 
-        // สร้าง fortune สำหรับ user
         async function createFortune(userId) {
             const content = document.getElementById(`content_${userId}`).value.trim();
             const date = document.getElementById(`date_${userId}`).value;
             const resultDiv = document.getElementById(`result_${userId}`);
-            
+
             if (!content) {
                 resultDiv.innerHTML = '<div class="alert alert-error">กรุณาใส่เนื้อหา fortune</div>';
                 return;
             }
-            
+
             try {
                 const response = await fetch('/admin/api/fortune/create', {
                     method: 'POST',
@@ -660,9 +1112,9 @@
                         fortune_date: date
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.innerHTML = '<div class="alert alert-success">✅ สร้าง fortune สำเร็จ</div>';
                     document.getElementById(`content_${userId}`).value = '';
@@ -675,17 +1127,16 @@
             }
         }
 
-        // ตรวจสอบ fortune ที่มีอยู่
         async function checkExistingFortune(userId) {
             const date = document.getElementById(`date_${userId}`).value;
             const existingDiv = document.getElementById(`existing_${userId}`);
-            
+
             if (!date) return;
-            
+
             try {
                 const response = await fetch(`/admin/api/fortune/user?user_id=${userId}&fortune_date=${date}`);
                 const data = await response.json();
-                
+
                 if (data.success && data.data) {
                     existingDiv.innerHTML = `
                         <div class="existing-fortune">
@@ -700,7 +1151,7 @@
             }
         }
 
-        // Sidebar functions
+        // ===== SIDEBAR FUNCTIONS =====
         function toggleSidebarVisibility() {
             if (isMobile) {
                 const isOpen = sidebar.classList.contains('show');
@@ -742,7 +1193,6 @@
         }
 
         function setActivePage(page) {
-            // Close sidebar on mobile after selection
             if (isMobile) {
                 closeSidebar();
             }
@@ -750,7 +1200,15 @@
 
         function logout() {
             if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-                window.location.href = '/admin/login';
+                fetch('/admin/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(() => {
+                        window.location.href = '/admin/login';
+                    });
             }
         }
 
@@ -776,14 +1234,42 @@
             }
         }
 
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', function() {
+        // ===== EVENT LISTENERS =====
+        document.addEventListener('DOMContentLoaded', function () {
             handleResize();
-            
+
+            // Input validation
+            const usernameInput = document.getElementById('adminUsername');
+            const passwordInput = document.getElementById('adminPassword');
+            const emailInput = document.getElementById('adminEmail');
+
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function () {
+                    const value = this.value;
+                    const isValid = /^[a-zA-Z0-9_]{3,50}$/.test(value);
+                    this.style.borderColor = isValid ? '#4caf50' : '#f44336';
+                });
+            }
+
+            if (emailInput) {
+                emailInput.addEventListener('input', function () {
+                    const value = this.value;
+                    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                    this.style.borderColor = isValid ? '#4caf50' : '#f44336';
+                });
+            }
+
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function () {
+                    const error = validatePassword(this.value);
+                    this.style.borderColor = error ? '#f44336' : '#4caf50';
+                });
+            }
+
             // เช็ค fortune ที่มีอยู่เมื่อโหลดหน้า
             <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
                 <% users.forEach(user => { %>
-                    checkExistingFortune('<%= user.line_user_id %>');
+                checkExistingFortune('<%= user.line_user_id %>');
                 <% }); %>
             <% } %>
         });
@@ -793,11 +1279,19 @@
         window.addEventListener('resize', handleResize);
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && isMobile && sidebar.classList.contains('show')) {
-                closeSidebar();
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (isMobile && sidebar.classList.contains('show')) {
+                    closeSidebar();
+                }
+
+                const modal = document.getElementById('addAdminModal');
+                if (modal.classList.contains('show')) {
+                    closeAddAdminModal();
+                }
             }
         });
     </script>
 </body>
+
 </html>
