@@ -27,15 +27,10 @@ router.post('/auth/register', mdw.csrfProtection, AuthController.register);
 // Payment Routes
 router.get('/order/payment', mdw.auth(['member']), mdw.csrfProtection, PaymentController.showPaymentPage);
 router.post('/order/payment', mdw.auth(['member']), mdw.csrfProtection, PaymentController.createPayment);
-
-// Renewal Routes
-router.get('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.showRenewPage);
-router.post('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.renewSubscription);
-
-// Status & Management Routes
 router.post('/order/status', mdw.auth(['member']), PaymentController.checkOrderStatus);
 
-// Success & Result Pages
+router.get('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.showRenewPage);
+router.post('/order/renew', mdw.auth(['member']), mdw.csrfProtection, PaymentController.renewSubscription);
 router.get('/order/succeeded', mdw.auth(['member']), PaymentController.showOrderSuccessPage);
 router.get('/order/renew-success', mdw.auth(['member']), PaymentController.showRenewSuccessPage);
 
