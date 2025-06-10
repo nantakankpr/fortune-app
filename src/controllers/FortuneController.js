@@ -76,9 +76,12 @@ class FortuneController {
                 LEFT JOIN subscriptions s ON u.line_user_id = s.user_id AND s.is_active = 1
             `);
 
+
+
             return res.render('admin/fortune-test', {
                 title: 'ทดสอบ Daily Fortune',
-                users: users
+                users: users,
+                admin: req.session.userData || null
             });
         } catch (error) {
             console.error('Show test page error:', error);

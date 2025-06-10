@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%= title || 'ทดสอบ Fortune - Admin' %></title>
     <style>
         * {
             margin: 0;
@@ -14,52 +14,246 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            padding: 20px;
+            background: #f5f7fa;
+            min-height: 100vh;
+            font-size: 14px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* Layout */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar - เหมือนกับ transactions.ejs */
+        .sidebar {
+            width: 280px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            left: 0;
+            top: 0;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(45deg, #2196f3, #21cbf3);
             color: white;
-            padding: 30px;
-            text-align: center;
         }
 
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
         }
 
-        .header p {
-            opacity: 0.9;
+        .sidebar-nav {
+            padding: 20px 0;
         }
 
-        .content {
-            padding: 30px;
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 15px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left-color: #2196f3;
+        }
+
+        .nav-item::before {
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .nav-item.transactions::before {
+            content: '📊';
+        }
+
+        .nav-item.members::before {
+            content: '👥';
+        }
+
+        .nav-item.fortune-test::before {
+            content: '🔮';
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            background: white;
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        .toggle-sidebar:hover {
+            background: #f0f0f0;
+            color: #2196f3;
+        }
+
+        .page-title-small {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+        }
+
+        .user-name {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+            transform: translateY(-1px);
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: clamp(20px, 4vw, 28px);
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: clamp(13px, 3vw, 15px);
+        }
+
+        /* Fortune Test Specific Styles */
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            margin-bottom: 24px;
         }
 
         .broadcast-section {
-            background: #e3f2fd;
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
             border: 2px solid #2196f3;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
             text-align: center;
+        }
+
+        .broadcast-section h3 {
+            color: #1976d2;
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+
+        .broadcast-section p {
+            color: #424242;
+            margin-bottom: 20px;
         }
 
         .broadcast-btn {
             background: linear-gradient(135deg, #ff6b6b, #ee5a52);
             color: white;
-            padding: 15px 30px;
+            padding: 16px 32px;
             border: none;
             border-radius: 25px;
             font-size: 16px;
@@ -74,34 +268,55 @@
             box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
 
+        .broadcast-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .users-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            min-width: 800px;
         }
 
         .users-table th,
         .users-table td {
-            padding: 12px;
+            padding: 16px 12px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+            vertical-align: middle;
         }
 
         .users-table th {
             background: #f8f9fa;
-            font-weight: bold;
+            font-weight: 600;
             color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            white-space: nowrap;
         }
 
-        .users-table tr:hover {
+        .users-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .users-table tbody tr:hover {
             background: #f8f9fa;
         }
 
         .status-badge {
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
         .status-active {
@@ -114,23 +329,42 @@
             color: #721c24;
         }
 
+        .fortune-form {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
         .fortune-input {
-            width: 100%;
-            min-height: 80px;
-            padding: 10px;
+            flex: 1;
+            min-width: 200px;
+            min-height: 60px;
+            padding: 8px 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13px;
             resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .fortune-input:focus {
+            outline: none;
+            border-color: #2196f3;
         }
 
         .date-input {
             padding: 8px 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
-            font-size: 14px;
-            margin-right: 10px;
+            font-size: 13px;
+            transition: border-color 0.3s ease;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #2196f3;
         }
 
         .create-btn {
@@ -139,9 +373,11 @@
             padding: 8px 16px;
             border: none;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .create-btn:hover {
@@ -155,23 +391,12 @@
             transform: none;
         }
 
-        .fortune-form {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
-
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
         .alert {
-            padding: 15px;
+            padding: 12px 16px;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 10px 0;
             font-weight: 500;
+            font-size: 13px;
         }
 
         .alert-success {
@@ -186,22 +411,47 @@
             border: 1px solid #f5c6cb;
         }
 
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
         .existing-fortune {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 8px;
-            margin-top: 10px;
-            font-size: 14px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #856404;
         }
 
-        @media (max-width: 768px) {
-            .content {
-                padding: 15px;
+        /* Mobile Responsive */
+        @media (max-width: 767px) {
+            .sidebar {
+                width: 280px;
+                transform: translateX(-100%);
             }
 
-            .users-table {
-                font-size: 14px;
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .page-content {
+                padding: 16px;
+            }
+
+            .broadcast-section {
+                padding: 16px;
             }
 
             .fortune-form {
@@ -209,80 +459,147 @@
             }
 
             .fortune-input {
-                min-height: 60px;
+                min-width: 100%;
+            }
+
+            .users-table {
+                min-width: 600px;
+                font-size: 13px;
+            }
+
+            .users-table th,
+            .users-table td {
+                padding: 12px 8px;
+            }
+
+            .user-name {
+                display: none;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔮 ทดสอบ Daily Fortune</h1>
-            <p>จัดการและทดสอบการส่ง fortune ประจำวัน</p>
-        </div>
+    <div class="admin-layout">
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <div class="content">
-            <!-- Broadcast Section -->
-            <div class="broadcast-section">
-                <h3>📢 ทดสอบส่ง Broadcast</h3>
-                <p>ส่งข้อความ fortune ให้สมาชิกที่มี subscription active ทั้งหมด</p>
-                <button id="broadcastBtn" class="broadcast-btn" onclick="testBroadcast()">
-                    🚀 ส่ง Broadcast ทดสอบ
-                </button>
-                <div id="broadcastResult"></div>
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Admin Dashboard</h2>
             </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/transactions" class="nav-item transactions" onclick="setActivePage('transactions')">จัดการธุรกรรม</a>
+                <a href="/admin/members" class="nav-item members" onclick="setActivePage('members')">ข้อมูลสมาชิก</a>
+                <a href="/admin/fortune-test" class="nav-item fortune-test active" onclick="setActivePage('fortune-test')">ทดสอบ Fortune</a>
+            </nav>
+        </aside>
 
-            <!-- Users Table -->
-            <h3>👥 รายชื่อสมาชิก</h3>
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>ชื่อ LINE</th>
-                        <th>UID</th>
-                        <th>ชื่อเต็ม</th>
-                        <th>สถานะ</th>
-                        <th>แพ็คเกจ</th>
-                        <th>สร้าง Fortune</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% users.forEach(user => { %>
-                    <tr>
-                        <td><%= user.line_name || 'ไม่ระบุ' %></td>
-                        <td><%= user.line_user_id || 'ไม่ระบุ' %></td>
-                        <td><%= user.full_name || 'ไม่ระบุ' %></td>
-                        <td>
-                            <span class="status-badge <%= user.is_active ? 'status-active' : 'status-inactive' %>">
-                                <%= user.is_active ? 'Active' : 'Inactive' %>
-                            </span>
-                        </td>
-                        <td><%= user.package_name || 'ไม่มี' %></td>
-                        <td>
-                            <div class="fortune-form">
-                                <input type="date" 
-                                       class="date-input" 
-                                       id="date_<%= user.line_user_id %>" 
-                                       value="<%= new Date().toISOString().split('T')[0] %>"
-                                       onchange="checkExistingFortune('<%= user.line_user_id %>')">
-                                <textarea class="fortune-input" 
-                                          id="content_<%= user.line_user_id %>" 
-                                          placeholder="เนื้อหา fortune สำหรับ <%= user.line_name %>..."></textarea>
-                                <button class="create-btn" 
-                                        onclick="createFortune('<%= user.line_user_id %>')">
-                                    สร้าง
-                                </button>
-                            </div>
-                            <div id="existing_<%= user.line_user_id %>"></div>
-                            <div id="result_<%= user.line_user_id %>"></div>
-                        </td>
-                    </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-        </div>
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="toggle-sidebar" id="toggleSidebar" aria-label="Toggle Sidebar">
+                        <span id="toggleIcon">☰</span>
+                    </button>
+                    <h1 class="page-title-small">ทดสอบ Fortune</h1>
+                </div>
+                <div class="user-info">
+                    <span class="user-name">สวัสดี, <%= admin?.username || 'Admin' %></span>
+                    <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">🔮 ทดสอบ Daily Fortune</h1>
+                    <p class="page-subtitle">จัดการและทดสอบการส่ง fortune ประจำวัน</p>
+                </div>
+
+                <!-- Broadcast Section -->
+                <div class="broadcast-section">
+                    <h3>📢 ทดสอบส่ง Broadcast</h3>
+                    <p>ส่งข้อความ fortune ให้สมาชิกที่มี subscription active ทั้งหมด</p>
+                    <button id="broadcastBtn" class="broadcast-btn" onclick="testBroadcast()">
+                        🚀 ส่ง Broadcast ทดสอบ
+                    </button>
+                    <div id="broadcastResult"></div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="content-card">
+                    <div class="table-wrapper">
+                        <h3 style="padding: 20px 20px 0; color: #333;">👥 รายชื่อสมาชิก</h3>
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อ LINE</th>
+                                    <th>UID</th>
+                                    <th>ชื่อเต็ม</th>
+                                    <th>สถานะ</th>
+                                    <th>แพ็คเกจ</th>
+                                    <th>สร้าง Fortune</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+                                    <% users.forEach(user => { %>
+                                    <tr>
+                                        <td><strong><%= user.line_name || 'ไม่ระบุ' %></strong></td>
+                                        <td><%= user.line_user_id || 'ไม่ระบุ' %></td>
+                                        <td><%= user.full_name || 'ไม่ระบุ' %></td>
+                                        <td>
+                                            <span class="status-badge <%= user.is_active ? 'status-active' : 'status-inactive' %>">
+                                                <%= user.is_active ? 'Active' : 'Inactive' %>
+                                            </span>
+                                        </td>
+                                        <td><%= user.package_name || 'ไม่มี' %></td>
+                                        <td>
+                                            <div class="fortune-form">
+                                                <input type="date" 
+                                                       class="date-input" 
+                                                       id="date_<%= user.line_user_id %>" 
+                                                       value="<%= new Date().toISOString().split('T')[0] %>"
+                                                       onchange="checkExistingFortune('<%= user.line_user_id %>')">
+                                                <textarea class="fortune-input" 
+                                                          id="content_<%= user.line_user_id %>" 
+                                                          placeholder="เนื้อหา fortune สำหรับ <%= user.line_name %>..."></textarea>
+                                                <button class="create-btn" 
+                                                        onclick="createFortune('<%= user.line_user_id %>')">
+                                                    สร้าง
+                                                </button>
+                                            </div>
+                                            <div id="existing_<%= user.line_user_id %>"></div>
+                                            <div id="result_<%= user.line_user_id %>"></div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                                            <div>ไม่พบข้อมูลสมาชิก</div>
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
+        let isMobile = window.innerWidth <= 767;
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.getElementById('mainContent');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const toggleIcon = document.getElementById('toggleIcon');
+
         // ทดสอบ broadcast
         async function testBroadcast() {
             const btn = document.getElementById('broadcastBtn');
@@ -293,7 +610,12 @@
             result.innerHTML = '<div class="alert alert-info">กำลังส่ง broadcast...</div>';
             
             try {
-                const response = await fetch('/test/fortune/broadcast');
+                const response = await fetch('/admin/api/fortune/broadcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
                 const data = await response.json();
                 
                 if (data.success) {
@@ -328,7 +650,7 @@
             }
             
             try {
-                const response = await fetch('/test/fortune/create', {
+                const response = await fetch('/admin/api/fortune/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -362,7 +684,7 @@
             if (!date) return;
             
             try {
-                const response = await fetch(`/test/fortune/user?user_id=${userId}&fortune_date=${date}`);
+                const response = await fetch(`/admin/api/fortune/user?user_id=${userId}&fortune_date=${date}`);
                 const data = await response.json();
                 
                 if (data.success && data.data) {
@@ -379,11 +701,103 @@
             }
         }
 
-        // เช็ค fortune ที่มีอยู่เมื่อโหลดหน้า
-        document.addEventListener('DOMContentLoaded', () => {
-            <% users.forEach(user => { %>
-                checkExistingFortune('<%= user.line_user_id %>');
-            <% }); %>
+        // Sidebar functions
+        function toggleSidebarVisibility() {
+            if (isMobile) {
+                const isOpen = sidebar.classList.contains('show');
+                if (isOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            } else {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                if (isCollapsed) {
+                    sidebar.classList.remove('collapsed');
+                    mainContent.classList.remove('expanded');
+                    updateToggleIcon(true);
+                } else {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('expanded');
+                    updateToggleIcon(false);
+                }
+            }
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('show');
+            sidebarOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            updateToggleIcon(true);
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+            updateToggleIcon(false);
+        }
+
+        function updateToggleIcon(isOpen) {
+            toggleIcon.textContent = isOpen ? '✕' : '☰';
+        }
+
+        function setActivePage(page) {
+            // Close sidebar on mobile after selection
+            if (isMobile) {
+                closeSidebar();
+            }
+        }
+
+        function logout() {
+            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                window.location.href = '/admin/login';
+            }
+        }
+
+        function handleResize() {
+            const newIsMobile = window.innerWidth <= 767;
+
+            if (newIsMobile !== isMobile) {
+                isMobile = newIsMobile;
+
+                if (isMobile) {
+                    sidebar.classList.remove('show');
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('expanded');
+                    sidebarOverlay.classList.remove('show');
+                    updateToggleIcon(false);
+                } else {
+                    sidebar.classList.remove('collapsed', 'show');
+                    mainContent.classList.remove('expanded');
+                    sidebarOverlay.classList.remove('show');
+                    updateToggleIcon(true);
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            handleResize();
+            
+            // เช็ค fortune ที่มีอยู่เมื่อโหลดหน้า
+            <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+                <% users.forEach(user => { %>
+                    checkExistingFortune('<%= user.line_user_id %>');
+                <% }); %>
+            <% } %>
+        });
+
+        toggleSidebar.addEventListener('click', toggleSidebarVisibility);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+        window.addEventListener('resize', handleResize);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isMobile && sidebar.classList.contains('show')) {
+                closeSidebar();
+            }
         });
     </script>
 </body>

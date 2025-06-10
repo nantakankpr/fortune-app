@@ -40,17 +40,17 @@ router.get('/order/succeeded', mdw.auth(['member']), PaymentController.showOrder
 router.get('/order/renew-success', mdw.auth(['member']), PaymentController.showRenewSuccessPage);
 
 // ==================== ADMIN ROUTES ====================
-router.post('/admin/add', BackendController.handleAddUser);
+router.post('/admin/add',mdw.authAdmin, BackendController.handleAddUser);
 router.get('/admin/login', mdw.csrfProtection, BackendController.showLoginPage);
 router.post('/admin/login', mdw.csrfProtection, BackendController.handleLogin);
-router.get('/admin/transactions', mdw.auth(['admin']), BackendController.showTransactionsPage);
-router.post('/admin/transactions/update', mdw.auth(['admin']), mdw.csrfProtection, BackendController.handleUpdateTransaction);
-router.post('/admin/logout', BackendController.handleLogout);
+router.post('/admin/logout', mdw.authAdmin, BackendController.handleLogout);
+router.get('/admin/transactions', mdw.authAdmin, BackendController.showTransactionsPage);
+router.post('/admin/transactions/update', mdw.authAdmin, mdw.csrfProtection, BackendController.handleUpdateTransaction);
+router.get('/admin/fortune-test', mdw.authAdmin, FortuneController.showTestPage);
 
-// ==================== FORTUNE TEST ROUTES ====================
-router.get('/test/fortune', FortuneController.showTestPage);
-router.post('/test/fortune/create', FortuneController.createFortuneForUser);
-router.get('/test/fortune/user', FortuneController.getUserFortune);
-router.get('/test/fortune/broadcast', FortuneController.testBroadcast);
+// ==================== ADMIN API ROUTES ====================
+router.post('/admin/api/fortune/broadcast', mdw.authAdmin, FortuneController.testBroadcast);
+router.post('/admin/api/fortune/create', mdw.authAdmin, FortuneController.createFortuneForUser);
+router.get('/admin/api/fortune/user', mdw.authAdmin, FortuneController.getUserFortune);
 
 module.exports = router;
