@@ -23,8 +23,9 @@ class BackendController {
 
   static async addUser(username, password, email) {
     try {
-      const existingUser = await DBHelper.select('users', { username });
-      if (existingUser) {
+      const existingUser = await DBHelper.select('admins', { username : username });
+      console.log('Existing user:', existingUser);
+      if (existingUser && existingUser.length > 0) {
         throw new Error('Username already exists');
       }
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,11 +35,24 @@ class BackendController {
         email,
         created_at: new Date(),
       };
-      const result = await DBHelper.insert('users', newUser);
+      const result = await DBHelper.insert('admins', newUser);
       return result;
     } catch (err) {
       console.error('Registration failed:', err.message);
       throw err;
+    }
+  }
+
+  // controller req,res handleAddUser
+  static async handleAddUser(req, res) {
+    try {
+      const { username, password, email } = req.body;
+      const result = await BackendController.addUser(username, password, email);
+      return res.status(201).json({ success: true, message: 'User added successfully', userId: result.insertId });
+    }
+    catch (error) {
+      console.error('Error adding user:', error.message);
+      return res.status(500).json({ success: false, error: error.message });
     }
   }
 
@@ -73,7 +87,7 @@ class BackendController {
   static async handleLogin(req, res) {
     try {
       const { username, password } = req.body;
-      // const admin = await BackendController.login(username, password);
+      const admin = await BackendController.login(username, password);
 
       req.session.user = {
         username: username,

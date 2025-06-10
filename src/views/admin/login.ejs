@@ -263,12 +263,6 @@
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
 
-        // Demo credentials
-        const DEMO_CREDENTIALS = {
-            username: 'admin',
-            password: 'admin123'
-        };
-
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -277,6 +271,13 @@
             
             // Hide error message
             errorMessage.style.display = 'none';
+            
+            // Disable button during request
+            const button = loginForm.querySelector('.login-button');
+            const originalText = button.textContent;
+            button.textContent = 'กำลังเข้าสู่ระบบ...';
+            button.disabled = true;
+            
             fetch('/admin/login', {
                 method: 'POST',
                 headers: {
@@ -292,32 +293,33 @@
                 return response.json();
             })
             .then(data => {
-                // Show success feedback
-                const button = loginForm.querySelector('.login-button');
-                const originalText = button.textContent;
-                button.textContent = 'กำลังเข้าสู่ระบบ...';
-                button.style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
-                button.disabled = true;
-                
-                // Redirect to dashboard
-                setTimeout(() => {
+                if (data.success) {
+                    // Show success feedback
+                    button.textContent = 'เข้าสู่ระบบสำเร็จ!';
+                    button.style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
+                    
                     // Show success message
                     const successDiv = document.createElement('div');
                     successDiv.className = 'success-message';
                     successDiv.textContent = 'เข้าสู่ระบบสำเร็จ! กำลังนำทางไปยังหน้าแดชบอร์ด...';
                     errorMessage.parentNode.insertBefore(successDiv, errorMessage);
                     
+                    // Redirect to dashboard
                     setTimeout(() => {
-                        alert('เข้าสู่ระบบสำเร็จ! (ในระบบจริงจะนำทางไปยังหน้า transactions)');
-                        window.location.href = '/admin/transactions';
-                        button.textContent = originalText;
-                        button.style.background = 'linear-gradient(45deg, #2196f3, #21cbf3)';
-                        button.disabled = false;
+                        window.location.href = data.redirectUrl || '/admin/transactions';
                     }, 1500);
-                }, 1000);
+                } else {
+                    throw new Error(data.error || 'Login failed');
+                }
             })
             .catch(error => {
+                // Reset button
+                button.textContent = originalText;
+                button.disabled = false;
+                button.style.background = 'linear-gradient(45deg, #2196f3, #21cbf3)';
+                
                 // Show error
+                errorMessage.textContent = error.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
                 errorMessage.style.display = 'block';
                 
                 // Add shake animation to form

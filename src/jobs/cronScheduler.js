@@ -10,10 +10,15 @@ class CronScheduler {
     static initializeJobs() {
         console.log('🕒 Initializing cron jobs...');
 
-        // ส่งข้อความ daily fortune ทุกวันเวลา 8:00 น.
+        // // ส่งข้อความ daily fortune ทุกวันเวลา 8:00 น.
         this.scheduleJob('daily-fortune', '0 8 * * *', async () => {
-            await DailyFortuneJob.sendDailyFortune();
+            await DailyFortuneJob.sendDailyFortuneMessages();
         });
+
+        // ส่งข้อความ daily fortune ทุกวันเวลา 9:20 น.
+        // this.scheduleJob('daily-fortune', '57 9 * * *', async () => {
+        //     await DailyFortuneJob.sendDailyFortuneMessages();
+        // });
 
         // ส่งข้อความ daily fortune ทุก 1 นาที (testing mode)
         // this.scheduleJob('daily-fortune', '* * * * *', async () => {

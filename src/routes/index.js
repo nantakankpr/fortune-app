@@ -5,6 +5,7 @@ const WebController = require('../controllers/WebController');
 const AuthController = require('../controllers/AuthController');
 const PaymentController = require('../controllers/PaymentController');
 const BackendController = require('../controllers/BackendController');
+const FortuneController = require('../controllers/FortuneController');
 
 // ==================== WEB ROUTES ====================
 // router.get('/nctv4', function(req, res) {
@@ -39,10 +40,17 @@ router.get('/order/succeeded', mdw.auth(['member']), PaymentController.showOrder
 router.get('/order/renew-success', mdw.auth(['member']), PaymentController.showRenewSuccessPage);
 
 // ==================== ADMIN ROUTES ====================
+router.post('/admin/add', BackendController.handleAddUser);
 router.get('/admin/login', mdw.csrfProtection, BackendController.showLoginPage);
 router.post('/admin/login', mdw.csrfProtection, BackendController.handleLogin);
 router.get('/admin/transactions', mdw.auth(['admin']), BackendController.showTransactionsPage);
 router.post('/admin/transactions/update', mdw.auth(['admin']), mdw.csrfProtection, BackendController.handleUpdateTransaction);
 router.post('/admin/logout', BackendController.handleLogout);
+
+// ==================== FORTUNE TEST ROUTES ====================
+router.get('/test/fortune', FortuneController.showTestPage);
+router.post('/test/fortune/create', FortuneController.createFortuneForUser);
+router.get('/test/fortune/user', FortuneController.getUserFortune);
+router.get('/test/fortune/broadcast', FortuneController.testBroadcast);
 
 module.exports = router;

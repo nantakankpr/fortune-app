@@ -1,0 +1,390 @@
+<!-- สร้างไฟล์ src/views/admin/fortune-test.ejs -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .broadcast-section {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .broadcast-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .broadcast-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .users-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .fortune-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .date-input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .create-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .create-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .create-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .fortune-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .existing-fortune {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+            }
+
+            .users-table {
+                font-size: 14px;
+            }
+
+            .fortune-form {
+                flex-direction: column;
+            }
+
+            .fortune-input {
+                min-height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 ทดสอบ Daily Fortune</h1>
+            <p>จัดการและทดสอบการส่ง fortune ประจำวัน</p>
+        </div>
+
+        <div class="content">
+            <!-- Broadcast Section -->
+            <div class="broadcast-section">
+                <h3>📢 ทดสอบส่ง Broadcast</h3>
+                <p>ส่งข้อความ fortune ให้สมาชิกที่มี subscription active ทั้งหมด</p>
+                <button id="broadcastBtn" class="broadcast-btn" onclick="testBroadcast()">
+                    🚀 ส่ง Broadcast ทดสอบ
+                </button>
+                <div id="broadcastResult"></div>
+            </div>
+
+            <!-- Users Table -->
+            <h3>👥 รายชื่อสมาชิก</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ชื่อ LINE</th>
+                        <th>UID</th>
+                        <th>ชื่อเต็ม</th>
+                        <th>สถานะ</th>
+                        <th>แพ็คเกจ</th>
+                        <th>สร้าง Fortune</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.line_name || 'ไม่ระบุ' %></td>
+                        <td><%= user.line_user_id || 'ไม่ระบุ' %></td>
+                        <td><%= user.full_name || 'ไม่ระบุ' %></td>
+                        <td>
+                            <span class="status-badge <%= user.is_active ? 'status-active' : 'status-inactive' %>">
+                                <%= user.is_active ? 'Active' : 'Inactive' %>
+                            </span>
+                        </td>
+                        <td><%= user.package_name || 'ไม่มี' %></td>
+                        <td>
+                            <div class="fortune-form">
+                                <input type="date" 
+                                       class="date-input" 
+                                       id="date_<%= user.line_user_id %>" 
+                                       value="<%= new Date().toISOString().split('T')[0] %>"
+                                       onchange="checkExistingFortune('<%= user.line_user_id %>')">
+                                <textarea class="fortune-input" 
+                                          id="content_<%= user.line_user_id %>" 
+                                          placeholder="เนื้อหา fortune สำหรับ <%= user.line_name %>..."></textarea>
+                                <button class="create-btn" 
+                                        onclick="createFortune('<%= user.line_user_id %>')">
+                                    สร้าง
+                                </button>
+                            </div>
+                            <div id="existing_<%= user.line_user_id %>"></div>
+                            <div id="result_<%= user.line_user_id %>"></div>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ทดสอบ broadcast
+        async function testBroadcast() {
+            const btn = document.getElementById('broadcastBtn');
+            const result = document.getElementById('broadcastResult');
+            
+            btn.disabled = true;
+            btn.textContent = '🔄 กำลังส่ง...';
+            result.innerHTML = '<div class="alert alert-info">กำลังส่ง broadcast...</div>';
+            
+            try {
+                const response = await fetch('/test/fortune/broadcast');
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            ✅ ส่ง broadcast สำเร็จ!<br>
+                            ส่งได้: ${data.result.sent} ข้อความ<br>
+                            ส่งไม่ได้: ${data.result.failed} ข้อความ<br>
+                            รวม: ${data.result.total} คน
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-error">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '🚀 ส่ง Broadcast ทดสอบ';
+        }
+
+        // สร้าง fortune สำหรับ user
+        async function createFortune(userId) {
+            const content = document.getElementById(`content_${userId}`).value.trim();
+            const date = document.getElementById(`date_${userId}`).value;
+            const resultDiv = document.getElementById(`result_${userId}`);
+            
+            if (!content) {
+                resultDiv.innerHTML = '<div class="alert alert-error">กรุณาใส่เนื้อหา fortune</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/test/fortune/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        content: content,
+                        fortune_date: date
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success">✅ สร้าง fortune สำเร็จ</div>';
+                    document.getElementById(`content_${userId}`).value = '';
+                    checkExistingFortune(userId);
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-error">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
+            }
+        }
+
+        // ตรวจสอบ fortune ที่มีอยู่
+        async function checkExistingFortune(userId) {
+            const date = document.getElementById(`date_${userId}`).value;
+            const existingDiv = document.getElementById(`existing_${userId}`);
+            
+            if (!date) return;
+            
+            try {
+                const response = await fetch(`/test/fortune/user?user_id=${userId}&fortune_date=${date}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    existingDiv.innerHTML = `
+                        <div class="existing-fortune">
+                            📋 มี fortune วันนี้แล้ว: "${data.data.content.substring(0, 50)}..."
+                        </div>
+                    `;
+                } else {
+                    existingDiv.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Error checking existing fortune:', error);
+            }
+        }
+
+        // เช็ค fortune ที่มีอยู่เมื่อโหลดหน้า
+        document.addEventListener('DOMContentLoaded', () => {
+            <% users.forEach(user => { %>
+                checkExistingFortune('<%= user.line_user_id %>');
+            <% }); %>
+        });
+    </script>
+</body>
+</html>
