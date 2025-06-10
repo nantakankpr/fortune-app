@@ -8,7 +8,7 @@ class BackendController {
       if (!user || user.length === 0) {
         throw new Error('User not found');
       }
-      user = user[0]; // Assuming select returns an array of users, take the first one
+      user = user[0];
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (!passwordMatch) {
         throw new Error('Invalid username or password');
@@ -16,7 +16,7 @@ class BackendController {
 
       return { success: true, username: user.username };
     } catch (err) {
-      console.error('Login failed:', err.message);
+      console.log('Login failed:', err.message);
       throw err;
     }
   }
@@ -37,21 +37,26 @@ class BackendController {
       const result = await DBHelper.insert('admins', newUser);
       return result;
     } catch (err) {
-      console.error('Registration failed:', err.message);
+      console.log('Add user failed:', err.message);
       throw err;
     }
   }
 
-  // controller req,res handleAddUser
   static async handleAddUser(req, res) {
     try {
       const { username, password, email } = req.body;
       const result = await BackendController.addUser(username, password, email);
-      return res.status(201).json({ success: true, message: 'User added successfully', userId: result.insertId });
-    }
-    catch (error) {
-      console.error('Error adding user:', error.message);
-      return res.status(500).json({ success: false, error: error.message });
+      return res.status(201).json({ 
+        success: true, 
+        message: 'เพิ่มผู้ดูแลสำเร็จ', 
+        userId: result.insertId 
+      });
+    } catch (error) {
+      console.log('Handle add user error:', error.message);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'ไม่สามารถเพิ่มผู้ดูแลได้ กรุณาลองใหม่อีกครั้ง' 
+      });
     }
   }
 
@@ -60,7 +65,7 @@ class BackendController {
       const rows = await DBHelper.select('transactions', {});
       return rows;
     } catch (err) {
-      console.error('Query failed:', err.message);
+      console.log('Get transactions failed:', err.message);
       throw err;
     }
   }
@@ -70,7 +75,7 @@ class BackendController {
       const result = await DBHelper.update('transactions', { status: status }, { id: transactionId });
       return result;
     } catch (err) {
-      console.error('Update failed:', err.message);
+      console.log('Update transaction failed:', err.message);
       throw err;
     }
   }
@@ -89,11 +94,19 @@ class BackendController {
       const admin = await BackendController.login(username, password);
       req.session.userData = {
         username: admin.username,
-        role: 'admin' // กำหนด role เป็น admin
+        role: 'admin'
       }
-      return res.status(200).json({ success: true, message: 'Login successful', redirect: '/admin/transactions' });
+      return res.status(200).json({ 
+        success: true, 
+        message: 'เข้าสู่ระบบสำเร็จ', 
+        redirect: '/admin/transactions' 
+      });
     } catch (error) {
-      return res.status(401).json({ success: false, error: error.message });
+      console.log('Handle login error:', error.message);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' 
+      });
     }
   }
 
@@ -105,19 +118,20 @@ class BackendController {
         res.render('admin/transactionsMobile', {
           title: 'Manage Transactions',
           transactions: transactions,
-          admin: req.session.userData.username // ใช้ req.session.userData แทน req.session.admin
+          admin: req.session.userData
         });
       } else {
         res.render('admin/transactions', {
           title: 'Manage Transactions',
           transactions: transactions,
-          admin: req.session.userData.username // ใช้ req.session.userData แทน req.session.admin
+          admin: req.session.userData
         });
       }
     } catch (error) {
+      console.log('Show transactions page error:', error.message);
       res.status(500).render('error', {
-        title: 'Error',
-        message: 'Failed to load transactions'
+        title: 'เกิดข้อผิดพลาด',
+        message: 'ไม่สามารถโหลดข้อมูลธุรกรรมได้'
       });
     }
   }
@@ -126,19 +140,38 @@ class BackendController {
     try {
       const { transactionId, status } = req.body;
       await BackendController.updateTransaction(transactionId, status);
-      res.json({ success: true, message: 'Transaction updated successfully' });
+      res.json({ 
+        success: true, 
+        message: 'อัปเดตธุรกรรมสำเร็จ' 
+      });
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      console.log('Handle update transaction error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: 'ไม่สามารถอัปเดตธุรกรรมได้ กรุณาลองใหม่อีกครั้ง' 
+      });
     }
   }
 
   static async handleLogout(req, res) {
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-      }
-      res.redirect('/admin/login');
-    });
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          console.log('Session destroy error:', err.message);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'ไม่สามารถออกจากระบบได้' 
+          });
+        }
+        res.redirect('/admin/login');
+      });
+    } catch (error) {
+      console.log('Handle logout error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: 'ไม่สามารถออกจากระบบได้' 
+      });
+    }
   }
 }
 
