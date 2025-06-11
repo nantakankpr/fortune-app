@@ -855,7 +855,8 @@
                 },
                 body: JSON.stringify(requestBody)
             })
-                .then((data) => { // แก้ไขตรงนี้
+                .then(response => response.json()) // Add this line to convert response to JSON
+                .then((data) => {
                     if (data.success) {
                         document.getElementById('transactionTable').innerHTML = data.html;
                         totalRecords = data.totalRecords || 0; // อัปเดตจำนวนรายการทั้งหมด

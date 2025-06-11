@@ -2,6 +2,7 @@ const DBHelper = require('../services/ormService');
 const bcrypt = require('bcrypt');
 const TransactionModel = require('../models/TransactionModel');
 const SubscriptionController = require('./SubscriptionController');
+const PaymentController = require('./PaymentController');
 const EasySlipService = require('../services/payment/easySlipService');
 
 
@@ -196,13 +197,15 @@ class BackendController {
         return res.status(400).json({ success: false, error: 'Invalid request data' });
       }
       const { transactionId, status, userId, packageId } = actions;
-      const packageData = await DBHelper.select('packages', { id: packageId });
+      let packageData = await DBHelper.select('packages', { id: packageId });
       if (packageData.length === 0) {
         return res.status(404).json({ success: false, error: 'Package not found' });
       }
 
+      packageData = packageData[0];
+
       await BackendController.updateTransaction(transactionId, status);
-      await SubscriptionController.createSubscription(userId, packageId, packageData[0]);
+      await PaymentController.handleRenewalCompletion(userId, packageData);
 
       res.json({ success: true, message: 'Transaction updated successfully' });
     } catch (error) {
