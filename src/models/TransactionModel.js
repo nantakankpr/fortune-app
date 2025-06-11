@@ -66,14 +66,19 @@ class TransactionModel {
         let params = {};
         let transactionQueryLimit = ` LIMIT 0,10 `;
         if (filters) {
-            const { memberName, status, date,nextlitmit,endlitmit } = filters;
-            if (memberName && memberName!='') params.recipient_name = memberName;
-            if (status && status!='all') params.status = status;
-            if (date && date!='')  params.updated_at = date;
-            if (nextlitmit && nextlitmit!='' && endlitmit && endlitmit!=''){
+            const { memberName, status, date, nextlitmit, endlitmit } = filters;
+
+            if (memberName && memberName !== '') params.recipient_name = memberName;
+            if (status && status !== 'all') params.status = status;
+
+            // ใช้ DATE() สำหรับการเปรียบเทียบวันที่
+            if (date && date !== '') params['DATE(t.updated_at)'] = date;
+
+            if (nextlitmit && nextlitmit !== '' && endlitmit && endlitmit !== '') {
                 transactionQueryLimit = ` LIMIT ${nextlitmit},${endlitmit} `;
             }
         }
+
         const transactionQueryJoin = ` INNER JOIN packages p ON t.package_id = p.id `;
         const transactionQueryOrderBy = ` ORDER BY t.id desc`;
         const transactionQuerySeleted = ` t.*,
@@ -82,9 +87,24 @@ class TransactionModel {
                                       p.price as package_price,
                                       'Promptpay' as channel `;
 
-       const total_record = await DBHelper.selectSql(' count(t.id) as total_record ','transactions t', params);
-       const row = await DBHelper.selectSql(transactionQuerySeleted,'transactions t',params,transactionQueryJoin,transactionQueryOrderBy,transactionQueryLimit);
-       return {row:row,total_record:total_record[0].total_record}
+        // Query สำหรับจำนวนรายการทั้งหมด
+        const total_record = await DBHelper.selectSql(
+            'COUNT(t.id) as total_record',
+            'transactions t',
+            params
+        );
+
+        // Query สำหรับรายการธุรกรรม
+        const row = await DBHelper.selectSql(
+            transactionQuerySeleted,
+            'transactions t',
+            params,
+            transactionQueryJoin,
+            transactionQueryOrderBy,
+            transactionQueryLimit
+        );
+
+        return { row: row, total_record: total_record[0].total_record };
     }
 
 }
