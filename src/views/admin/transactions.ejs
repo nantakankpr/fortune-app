@@ -526,270 +526,124 @@
             display: flex;
         }
 
+        /* Modal Content */
         .modal-content {
             background: white;
             border-radius: 12px;
-            padding: 0;
+            padding: 24px;
             max-width: 500px;
             width: 100%;
-            max-height: 90vh;
-            overflow: hidden;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            animation: modalSlide 0.3s ease;
+            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes modalSlide {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        /* Modal Header */
         .modal-header {
-            padding: 24px;
-            border-bottom: 1px solid #e0e0e0;
-            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
         .modal-title {
             font-size: 18px;
-            color: #333;
-            margin-bottom: 8px;
             font-weight: 600;
+            color: #333;
         }
 
-        .modal-message {
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
             color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close-btn:hover {
+            color: #000;
+        }
+
+        /* Modal Body */
+        .modal-body {
             font-size: 14px;
+            color: #666;
             line-height: 1.5;
         }
 
-        .modal-actions {
-            padding: 24px;
-            border-top: 1px solid #e0e0e0;
-            background: #f8f9fa;
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
+        /* Modal Footer */
+        .modal-footer {
+            margin-top: 16px;
+            text-align: right;
         }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 80px;
-            right: 0px;
-            padding: 16px 20px;
-            border-radius: 8px;
-            color: white;
+        /* Button Styles */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
             font-weight: 500;
-            z-index: 3000;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            max-width: calc(100vw - 40px);
+            transition: all 0.3s ease;
         }
 
-        .toast.show {
-            transform: translateX(0);
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
         }
 
-        .toast-success {
-            background: #28a745;
+        .btn-secondary:hover {
+            background: #545b62;
         }
 
-        .toast-error {
-            background: #dc3545;
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
+        .balance-container {
+            display: flex;
+            justify-content: flex-end;
             margin-bottom: 16px;
         }
 
-
-        /* Tablet Styles */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .sidebar {
-                width: 260px;
-            }
-
-            .main-content {
-                margin-left: 260px;
-            }
-
-            .page-content {
-                padding: 20px;
-            }
-
-            .filter-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .balance-btn {
+            padding: 12px 24px;
+            background: #4caf50;
+            /* สีเขียว */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
         }
 
-        /* Mobile Styles */
-        @media (max-width: 767px) {
-            .sidebar {
-                width: 280px;
-                transform: translateX(-100%);
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .topbar {
-                padding: 12px 16px;
-            }
-
-            .page-content {
-                padding: 16px;
-            }
-
-            .page-header {
-                margin-bottom: 16px;
-            }
-
-            .filters {
-                padding: 16px;
-                margin-bottom: 16px;
-            }
-
-            .filter-row {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .filter-btn {
-                width: 100%;
-                padding: 14px;
-            }
-
-            .table {
-                min-width: 600px;
-                font-size: 13px;
-            }
-
-            .table th,
-            .table td {
-                padding: 12px 8px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .btn {
-                padding: 10px 12px;
-                font-size: 13px;
-            }
-
-            .modal-content {
-                max-width: 100%;
-                margin: 16px;
-            }
-
-            .modal-header,
-            .modal-actions {
-                padding: 20px;
-            }
-
-            .toast {
-                right: 16px;
-                top: 16px;
-                left: 16px;
-                transform: translateY(-100%);
-                max-width: none;
-            }
-
-            .toast.show {
-                transform: translateY(0);
-            }
-
-            .user-info {
-                gap: 8px;
-            }
-
-            .user-name {
-                display: none;
-            }
-
-            .pagination {
-                gap: 4px;
-            }
-
-            .pagination-btn {
-                min-width: 36px;
-                min-height: 36px;
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-
-            .pagination-container {
-                padding: 16px;
-            }
+        .balance-btn:hover {
+            background: #388e3c;
+            /* สีเขียวเข้มเมื่อ hover */
+            transform: translateY(-2px);
         }
 
-        /* Extra small mobile */
-        @media (max-width: 375px) {
-            .page-content {
-                padding: 12px;
-            }
-
-            .filters {
-                padding: 12px;
-            }
-
-            .table {
-                min-width: 500px;
-                font-size: 12px;
-            }
-
-            .table th,
-            .table td {
-                padding: 8px 6px;
-            }
+        .balance-btn:active {
+            transform: scale(0.98);
         }
 
-        /* Large desktop */
-        @media (min-width: 1200px) {
-            .sidebar {
-                width: 300px;
-            }
-
-            .main-content {
-                margin-left: 300px;
-            }
-
-            .page-content {
-                padding: 32px;
-            }
-
-            .filter-row {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        /* High DPI displays */
-        @media (-webkit-min-device-pixel-ratio: 2) {
-            .table {
-                -webkit-font-smoothing: antialiased;
-            }
+        .balance-icon {
+            font-size: 18px;
         }
     </style>
 </head>
@@ -833,6 +687,12 @@
                 <div class="page-header">
                     <h1 class="page-title">จัดการธุรกรรม</h1>
                     <p class="page-subtitle">ตรวจสอบและยืนยันธุรกรรมที่โอนเงินเข้าระบบ</p>
+                </div>
+
+                <div class="balance-container">
+                    <button class="balance-btn" type="button" onclick="checkBalance()">
+                        <span class="balance-icon">💰</span> เช็คยอดคงเหลือ
+                    </button>
                 </div>
 
                 <!-- Filters -->
@@ -911,6 +771,22 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Balance Modal -->
+    <div class="modal" id="balanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">ข้อมูลยอดคงเหลือ</h3>
+                <button class="modal-close-btn" onclick="closeBalanceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="balanceInfo" style="color: #333; font-weight: 500;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBalanceModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Pagination variables
         let currentPage = 1;
@@ -979,8 +855,7 @@
                 },
                 body: JSON.stringify(requestBody)
             })
-                .then(res => res.json())
-                .then(data => {
+                .then((data) => { // แก้ไขตรงนี้
                     if (data.success) {
                         document.getElementById('transactionTable').innerHTML = data.html;
                         totalRecords = data.totalRecords || 0; // อัปเดตจำนวนรายการทั้งหมด
@@ -991,7 +866,7 @@
                         console.error('Error fetching transactions:', data.message);
                     }
                 })
-                .catch(err => console.error('Fetch error:', err));
+                .catch((err) => console.error('Fetch error:', err));
         }
 
         async function confirmAction() {
@@ -1354,6 +1229,54 @@
                         showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
                     });
             }
+        }
+
+        async function checkBalance() {
+            try {
+                const response = await fetch('/admin/balance', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const balanceInfo = `
+                        <p><strong>แอปพลิเคชัน:</strong> ${data.data.application}</p>
+                        <p><strong>โควต้าที่ใช้ไป:</strong> ${data.data.usedQuota} ครั้ง</p>
+                        <p><strong>โควต้าสูงสุด:</strong> ${data.data.maxQuota} ครั้ง</p>
+                        <p><strong>โควต้าคงเหลือ:</strong> ${data.data.remainingQuota} ครั้ง</p>
+                        <p><strong>เครดิตปัจจุบัน:</strong> ${data.data.currentCredit} บาท</p>
+                        <p><strong>วันหมดอายุ:</strong> ${new Date(data.data.expiredAt).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    })}</p>
+                    `;
+
+                    document.getElementById('balanceInfo').innerHTML = balanceInfo;
+                    openBalanceModal();
+                } else {
+                    showToast('ไม่สามารถดึงข้อมูลยอดคงเหลือได้', 'error');
+                }
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+                showToast('เกิดข้อผิดพลาดในการเช็คยอดคงเหลือ', 'error');
+            }
+        }
+
+        function openBalanceModal() {
+            const modal = document.getElementById('balanceModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBalanceModal() {
+            const modal = document.getElementById('balanceModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
         }
     </script>
 </body>

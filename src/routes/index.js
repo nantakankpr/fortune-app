@@ -42,6 +42,7 @@ router.post('/admin/logout', mdw.authAdmin, BackendController.handleLogout);
 router.get('/admin/transactions', mdw.authAdmin, mdw.csrfProtection,BackendController.showTransactionsPage);
 router.post('/admin/transactions',mdw.authAdmin, mdw.csrfProtection,BackendController.filteredTransactions);
 router.post('/admin/transactions/update', mdw.authAdmin, mdw.csrfProtection, BackendController.handleUpdateTransaction);
+router.get('/admin/balance', mdw.authAdmin, BackendController.checkBalance);
 router.get('/admin/fortune-test', mdw.authAdmin, FortuneController.showTestPage);
 
 // ==================== ADMIN API ROUTES ====================

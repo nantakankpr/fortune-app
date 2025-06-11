@@ -2,6 +2,7 @@ const DBHelper = require('../services/ormService');
 const bcrypt = require('bcrypt');
 const TransactionModel = require('../models/TransactionModel');
 const SubscriptionController = require('./SubscriptionController');
+const EasySlipService = require('../services/payment/easySlipService');
 
 
 class BackendController {
@@ -225,6 +226,32 @@ class BackendController {
       res.status(500).json({ success: false, error: 'Logout failed' });
     }
   }
+
+  //check balance easySlip
+  static async checkBalance(req, res) {
+    try {
+      const data = await EasySlipService.getBalance();
+      if (data.success) {
+        return res.status(200).json({
+          success: true,
+          data: data.data
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: data.error || 'Unable to fetch balance'
+        });
+      }
+    } catch (error) {
+      console.error('Check balance error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error checking balance'
+      });
+    }
+  }
 }
+
+
 
 module.exports = BackendController;

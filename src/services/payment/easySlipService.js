@@ -26,7 +26,8 @@ class EasySlipService {
                         Authorization: `Bearer ${config.EASYSLIP_API_KEY}`,
                     },
                 },
-            )
+            );
+
             // Check if API call was successful and data exists
             if (data.status === 200 && data.data) {
                 const slipData = data.data;
@@ -53,6 +54,39 @@ class EasySlipService {
             };
         }
     }
+
+    // เพิ่มฟังก์ชัน getBalance
+    static async getBalance() {
+        try {
+            const { data } = await axios.get(
+                'https://developer.easyslip.com/api/v1/me',
+                {
+                    headers: {
+                        Authorization: `Bearer ${config.EASYSLIP_API_KEY}`,
+                    },
+                },
+            );
+
+            if (data.status === 200 && data.data) {
+                return {
+                    success: true,
+                    data: data.data
+                };
+            } else {
+                return {
+                    success: false,
+                    error: 'Unable to fetch balance',
+                    data: data
+                };
+            }
+        } catch (error) {
+            console.error('EasySlip API error (getBalance):', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
 }
 
-module.exports = { EasySlipService };
+module.exports = EasySlipService;
