@@ -75,7 +75,7 @@ class TransactionModel {
             }
         }
         const transactionQueryJoin = ` INNER JOIN packages p ON t.package_id = p.id `;
-        const transactionQueryOrderBy = ` ORDER BY t.id `;
+        const transactionQueryOrderBy = ` ORDER BY t.id desc`;
         const transactionQuerySeleted = ` t.*,
                                       p.name as package_name,
                                       p.display_name as package_display_name,
