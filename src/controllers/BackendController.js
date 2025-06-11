@@ -199,13 +199,14 @@ class BackendController {
       if (packageData.length === 0) {
         return res.status(404).json({ success: false, error: 'Package not found' });
       }
-      if (status == 'completed') {
-        await SubscriptionController.createSubscription(userId, packageId, packageData[0]);
-      }
+
       await BackendController.updateTransaction(transactionId, status);
+      await SubscriptionController.createSubscription(userId, packageId, packageData[0]);
+
       res.json({ success: true, message: 'Transaction updated successfully' });
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      console.error('Update transaction error:', error);
+      res.status(500).json({ success: false, error: 'Update transaction error' });
     }
   }
 
