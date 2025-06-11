@@ -54,7 +54,6 @@ class SubscriptionController {
             if (!userId || !packageId || !packageData) {
                 throw new Error('Missing required subscription data');
             }
-
             if (!packageData.name || !packageData.duration) {
                 throw new Error('Invalid package data');
             }
@@ -76,7 +75,6 @@ class SubscriptionController {
                 created_at: new Date(),
                 updated_at: new Date()
             };
-
             const result = await SubscriptionModel.createSubscription(subscriptionData);
             return result;
         } catch (error) {

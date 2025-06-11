@@ -1,0 +1,42 @@
+<% if (transactions && transactions.length > 0) { %>
+    <% transactions.forEach(function(transaction) { %>
+        <tr>
+            <td><%= new Date(transaction.updated_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) %></td>
+            <td><strong><%= transaction.recipient_name %></strong></td>
+            <td><%= transaction.channel %></td>
+            <td><strong>฿ <%= transaction.amount %></strong></td>
+            <td>
+                <% 
+                let statusText = '⏳ รอดำเนินการ';
+                if (transaction.status === 'completed') { 
+                    statusText = '✅ อนุมัติแล้ว';
+                } else if (transaction.status === 'canceled') { 
+                    statusText = '❌ ยกเลิกแล้ว';
+                } else if (transaction.status === 'expired') { 
+                    statusText = '⛔ หมดอายุแล้ว';
+                }
+                %>
+                <span class="status-badge status-<%= transaction.status %>">
+                    <%= statusText %>
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <% if (transaction.status === 'pending') { %>
+                        <button class="btn btn-success" onclick="showConfirmModal('<%= transaction.transaction_id %>', '<%= transaction.amount %>', '<%= transaction.recipient_name %>', '<%= transaction.user_id %>', '<%= transaction.package_id %>', 'approve')">ยืนยัน</button>
+                        <button class="btn btn-danger" onclick="showConfirmModal('<%= transaction.transaction_id %>', '<%= transaction.amount %>', '<%= transaction.recipient_name %>', '<%= transaction.user_id %>', '<%= transaction.package_id %>', 'reject')">ยกเลิก</button>
+                    <% } else { %>
+                        <span class="status-bg">ดำเนินการแล้ว</span>
+                    <% } %>
+                </div>
+            </td>
+        </tr> 
+    <% }); %>
+<% } else { %>
+        <tr>
+            <td colspan="6" class="empty-state">
+                <div class="empty-state-icon">📊</div>
+                <div>ไม่พบข้อมูลธุรกรรม</div>
+            </td>
+        </tr>
+<% } %>

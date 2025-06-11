@@ -164,6 +164,16 @@ class DBHelper {
             affectedRows: result.affectedRows
         };
     }
+    
+    static async selectSql(selected,table, whereObj = {},join = '', orderBy = '', limit = '' ) {
+        const whereKeys = Object.keys(whereObj);
+        const whereClause = whereKeys.length
+        ? 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ')
+        : '';
+        const sql = `SELECT ${selected} FROM ${table} ${join} ${whereClause} ${orderBy} ${limit}`;
+        const params = Object.values(whereObj);
+        return DBHelper.query(sql, params);
+    }
 }
 
 module.exports = DBHelper; // export แบบ direct class

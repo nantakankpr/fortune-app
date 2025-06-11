@@ -1,5 +1,8 @@
 const DBHelper = require('../services/ormService');
 const bcrypt = require('bcrypt');
+const TransactionModel = require('../models/TransactionModel');
+const SubscriptionController = require('./SubscriptionController');
+
 
 class BackendController {
   static async login(username, password) {
@@ -60,22 +63,43 @@ class BackendController {
     }
   }
 
-  static async getTransactions() {
+   static async getTransactions() {
     try {
-      const rows = await DBHelper.select('transactions', {});
+      const rows = await TransactionModel.getTransaction();
       return rows;
     } catch (err) {
-      console.log('Get transactions failed:', err.message);
+      console.error('Query failed:', err.message);
       throw err;
+    }
+  }
+
+    static async filteredTransactions(req, res) {
+    const filters = req.body;
+    try {
+      if (!filters || typeof filters !== 'object' || Object.keys(filters).length === 0) {
+        return res.status(400).json({ success: false, data: {}, message: "Empty filters" });
+      }
+      const row = await TransactionModel.getTransaction(filters);
+      let transactions = row['row'] ;
+      return res.render('admin/transactionTable', { transactions }, (err, html) => {
+        if (err) {
+          console.error('render error:', err);
+          return res.status(500).send('Rendering failed');
+        }
+        res.send(html);
+      });
+    } catch (err) {
+      console.error("Filter failed:", err);
+      return res.status(500).send('Server error');
     }
   }
 
   static async updateTransaction(transactionId, status) {
     try {
-      const result = await DBHelper.update('transactions', { status: status }, { id: transactionId });
+      const result = await DBHelper.update('transactions', { status: status }, { transaction_id: transactionId });
       return result;
     } catch (err) {
-      console.log('Update transaction failed:', err.message);
+      console.error('Update failed:', err.message);
       throw err;
     }
   }
@@ -113,43 +137,39 @@ class BackendController {
   static async showTransactionsPage(req, res) {
     try {
       const transactions = await BackendController.getTransactions();
-
-      if (req.device && req.device.type === 'phone') {
-        res.render('admin/transactionsMobile', {
-          title: 'Manage Transactions',
-          transactions: transactions,
-          admin: req.session.userData
+        res.render('admin/transactions', { 
+            title: 'Manage Transactions',
+            transactions: transactions['row'] || [],
+            total_record: transactions['total_record'] || 0,
+            csrfToken: req.csrfToken ? req.csrfToken() : null,
+            admin: req.session.userData || null
         });
-      } else {
-        res.render('admin/transactions', {
-          title: 'Manage Transactions',
-          transactions: transactions,
-          admin: req.session.userData
-        });
-      }
     } catch (error) {
-      console.log('Show transactions page error:', error.message);
-      res.status(500).render('error', {
-        title: 'เกิดข้อผิดพลาด',
-        message: 'ไม่สามารถโหลดข้อมูลธุรกรรมได้'
+      res.status(500).render('error', { 
+        title: 'Error',
+        message: 'Failed to load transactions'
       });
     }
   }
 
   static async handleUpdateTransaction(req, res) {
     try {
-      const { transactionId, status } = req.body;
+      const actions = req.body.actions;
+      if (!actions || !actions.transactionId || !actions.status || !actions.userId || !actions.packageId ) {
+        return res.status(400).json({ success: false, error: 'Invalid request data' });
+      }
+      const { transactionId, status, userId, packageId} = actions;
+      const packageData =  await DBHelper.select('packages', { id: packageId });
+      if(packageData.length === 0) {
+        return res.status(404).json({ success: false, error: 'Package not found' });
+      }
+      if(status == 'completed') {
+        await SubscriptionController.createSubscription(userId, packageId, packageData[0]);
+      }
       await BackendController.updateTransaction(transactionId, status);
-      res.json({ 
-        success: true, 
-        message: 'อัปเดตธุรกรรมสำเร็จ' 
-      });
+      res.json({ success: true, message: 'Transaction updated successfully' });
     } catch (error) {
-      console.log('Handle update transaction error:', error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: 'ไม่สามารถอัปเดตธุรกรรมได้ กรุณาลองใหม่อีกครั้ง' 
-      });
+      res.status(500).json({ success: false, error: error.message });
     }
   }
 

@@ -39,7 +39,8 @@ router.post('/admin/add',mdw.authAdmin, BackendController.handleAddUser);
 router.get('/admin/login', mdw.csrfProtection, BackendController.showLoginPage);
 router.post('/admin/login', mdw.csrfProtection, BackendController.handleLogin);
 router.post('/admin/logout', mdw.authAdmin, BackendController.handleLogout);
-router.get('/admin/transactions', mdw.authAdmin, BackendController.showTransactionsPage);
+router.get('/admin/transactions', mdw.authAdmin, mdw.csrfProtection,BackendController.showTransactionsPage);
+router.post('/admin/transactions',mdw.authAdmin, mdw.csrfProtection,BackendController.filteredTransactions);
 router.post('/admin/transactions/update', mdw.authAdmin, mdw.csrfProtection, BackendController.handleUpdateTransaction);
 router.get('/admin/fortune-test', mdw.authAdmin, FortuneController.showTestPage);
 

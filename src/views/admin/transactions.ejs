@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title>จัดการธุรกรรม - Admin Dashboard</title>
     <style>
         * {
@@ -328,26 +329,33 @@
 
         /* Status badges */
         .status-badge {
-            padding: 6px 12px;
+            /* padding: 6px 12px; */
             border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
             white-space: nowrap;
         }
 
+        .status-bg{
+            color: #737272;
+            font-size: 12px;
+        }
+
         .status-pending {
             background: #fff3cd;
             color: #856404;
+            padding: 5px;
         }
-
-        .status-approved {
+        .status-completed {
             background: #d4edda;
             color: #155724;
+            padding: 5px;
         }
 
-        .status-rejected {
+        .status-canceled {
             background: #f8d7da;
             color: #721c24;
+            padding: 5px;
         }
 
         /* Action buttons */
@@ -559,8 +567,8 @@
         /* Toast */
         .toast {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 80px;
+            right: 0px;
             padding: 16px 20px;
             border-radius: 8px;
             color: white;
@@ -594,6 +602,7 @@
             font-size: 48px;
             margin-bottom: 16px;
         }
+
 
         /* Tablet Styles */
         @media (min-width: 768px) and (max-width: 1024px) {
@@ -782,8 +791,10 @@
                 <h2 class="sidebar-title">Admin Dashboard</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="/admin/transactions" class="nav-item active" onclick="setActivePage('transactions')">จัดการธุรกรรม</a>
-                <a href="/admin/members" class="nav-item members" onclick="setActivePage('members')">ข้อมูลสมาชิก</a>
+                <a href="/admin/transactions" class="nav-item transactions active"
+                    onclick="setActivePage('transactions')">จัดการธุรกรรม</a>
+                <a href="/admin/fortune-test" class="nav-item fortune-test"
+                    onclick="setActivePage('fortune-test')">ทดสอบ Fortune</a>
             </nav>
         </aside>
 
@@ -798,7 +809,7 @@
                     <h1 class="page-title-small">จัดการธุรกรรม</h1>
                 </div>
                 <div class="user-info">
-                    <span class="user-name">สวัสดี, Admin</span>
+                    <span class="user-name">สวัสดี, <%= admin?.username || 'Admin' %></span>
                     <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
                 </div>
             </header>
@@ -814,8 +825,8 @@
                 <div class="filters">
                     <div class="filter-row">
                         <div class="filter-group">
-                            <label class="filter-label">ค้นหา (ชื่อ/ช่องทาง)</label>
-                            <input type="text" class="filter-input" id="searchInput" placeholder="กรอกชื่อหรือช่องทาง">
+                            <label class="filter-label">ค้นหา ชื่อสมาชิก</label>
+                            <input type="text" class="filter-input" id="nameFilter" placeholder="กรอกชื่อ">
                         </div>
                         <div class="filter-group">
                             <label class="filter-label">วันที่</label>
@@ -824,18 +835,17 @@
                         <div class="filter-group">
                             <label class="filter-label">สถานะ</label>
                             <select class="filter-input" id="statusFilter">
-                                <option value="">ทั้งหมด</option>
+                                <option value="all">ทั้งหมด</option>
                                 <option value="pending">รอดำเนินการ</option>
-                                <option value="approved">อนุมัติแล้ว</option>
-                                <option value="rejected">ยกเลิกแล้ว</option>
+                                <option value="completed">อนุมัติแล้ว</option>
+                                <option value="canceled">ยกเลิกแล้ว</option>
                             </select>
                         </div>
                         <div class="filter-group">
-                            <button class="filter-btn" onclick="applyFilters()">ค้นหา</button>
+                            <button class="filter-btn" onclick="filtersTransaction()">ค้นหา</button>
                         </div>
                     </div>
                 </div>
-
                 <!-- Table -->
                 <div class="table-container">
                     <div class="table-wrapper">
@@ -850,9 +860,7 @@
                                     <th>การดำเนินการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="transactionTable">
-                                <!-- Data will be populated by JavaScript -->
-                            </tbody>
+                               <tbody id="transactionTable"> <%- include('transactionTable') %> </tbody>
                         </table>
                     </div>
                 </div>
@@ -860,10 +868,8 @@
                 <!-- Pagination -->
                 <div class="pagination-container" id="paginationContainer" style="display: none;">
                     <div class="pagination-info" id="paginationInfo">
-                        <!-- Pagination info will be populated by JavaScript -->
                     </div>
                     <div class="pagination" id="pagination">
-                        <!-- Pagination buttons will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -872,13 +878,17 @@
 
     <!-- Confirmation Modal -->
     <div class="modal" id="confirmModal">
+        <input type="hidden" id="transactionId" >
+        <input type="hidden" id="transactionName" >
+        <input type="hidden" id="transactionpackage_id" >
+        <input type="hidden" id="transactionuser_id" >
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">ยืนยันการดำเนินการ</h3>
                 <p class="modal-message" id="modalMessage">คุณต้องการดำเนินการนี้ใช่หรือไม่?</p>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                <button class="btn btn-secondary" onclick="closeModal()">ปิด</button>
                 <button class="btn btn-success" id="confirmBtn" onclick="confirmAction()">ยืนยัน</button>
             </div>
         </div>
@@ -888,236 +898,13 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // Sample transaction data (simulate API response)
-        let allTransactions = [
-            {
-                id: 1,
-                date: '2025-05-29',
-                memberName: 'ณัฐพงศ์ ใจดี',
-                channel: 'PromptPay',
-                amount: 499,
-                status: 'pending',
-                transactionId: 'TXN001234567',
-                phoneNumber: '081-234-5678',
-                time: '14:30:25'
-            },
-            {
-                id: 2,
-                date: '2025-05-29',
-                memberName: 'อาร์มี่ สุขสันต์',
-                channel: 'Mobile Banking',
-                amount: 999,
-                status: 'approved',
-                transactionId: 'TXN001234568',
-                phoneNumber: '089-876-5432',
-                time: '09:15:10'
-            },
-            {
-                id: 3,
-                date: '2025-05-28',
-                memberName: 'มิ้นต์ หวานใจ',
-                channel: 'PromptPay',
-                amount: 299,
-                status: 'pending',
-                transactionId: 'TXN001234569',
-                phoneNumber: '092-555-1234',
-                time: '16:45:33'
-            },
-            {
-                id: 4,
-                date: '2025-05-28',
-                memberName: 'เจมส์ คูลแมน',
-                channel: 'Bank Transfer',
-                amount: 799,
-                status: 'rejected',
-                transactionId: 'TXN001234570',
-                phoneNumber: '083-999-8888',
-                time: '11:20:45'
-            },
-            {
-                id: 5,
-                date: '2025-05-27',
-                memberName: 'ปิงปอง สนุกสนาน',
-                channel: 'PromptPay',
-                amount: 1299,
-                status: 'approved',
-                transactionId: 'TXN001234571',
-                phoneNumber: '086-777-6666',
-                time: '13:10:15'
-            },
-            {
-                id: 6,
-                date: '2025-05-27',
-                memberName: 'ลิซ่า กิมจิ',
-                channel: 'Mobile Banking',
-                amount: 599,
-                status: 'pending',
-                transactionId: 'TXN001234572',
-                phoneNumber: '094-111-2222',
-                time: '10:30:45'
-            },
-            {
-                id: 7,
-                date: '2025-05-26',
-                memberName: 'จอห์น สมิธ',
-                channel: 'PromptPay',
-                amount: 399,
-                status: 'approved',
-                transactionId: 'TXN001234573',
-                phoneNumber: '081-333-4444',
-                time: '15:20:30'
-            },
-            {
-                id: 8,
-                date: '2025-05-26',
-                memberName: 'มาร์ค ซัคเคอร์',
-                channel: 'Bank Transfer',
-                amount: 1599,
-                status: 'pending',
-                transactionId: 'TXN001234574',
-                phoneNumber: '089-555-7777',
-                time: '08:45:15'
-            },
-            {
-                id: 9,
-                date: '2025-05-25',
-                memberName: 'เทย์เลอร์ สวิฟต์',
-                channel: 'PromptPay',
-                amount: 899,
-                status: 'approved',
-                transactionId: 'TXN001234575',
-                phoneNumber: '092-888-9999',
-                time: '12:15:50'
-            },
-            {
-                id: 10,
-                date: '2025-05-25',
-                memberName: 'อิลอน มัสก์',
-                channel: 'Mobile Banking',
-                amount: 2499,
-                status: 'rejected',
-                transactionId: 'TXN001234576',
-                phoneNumber: '083-000-1111',
-                time: '17:30:25'
-            },
-            {
-                id: 11,
-                date: '2025-05-24',
-                memberName: 'บิล เกตส์',
-                channel: 'Bank Transfer',
-                amount: 1999,
-                status: 'approved',
-                transactionId: 'TXN001234577',
-                phoneNumber: '081-222-3333',
-                time: '09:00:00'
-            },
-            {
-                id: 12,
-                date: '2025-05-24',
-                memberName: 'สตีฟ จ็อบส์',
-                channel: 'PromptPay',
-                amount: 799,
-                status: 'pending',
-                transactionId: 'TXN001234578',
-                phoneNumber: '089-444-5555',
-                time: '14:45:30'
-            },
-            {
-                id: 13,
-                date: '2025-05-23',
-                memberName: 'วอร์เรน บัฟเฟต',
-                channel: 'Mobile Banking',
-                amount: 3299,
-                status: 'approved',
-                transactionId: 'TXN001234579',
-                phoneNumber: '092-666-7777',
-                time: '11:30:15'
-            },
-            {
-                id: 14,
-                date: '2025-05-23',
-                memberName: 'เจฟ เบโซส',
-                channel: 'PromptPay',
-                amount: 1599,
-                status: 'pending',
-                transactionId: 'TXN001234580',
-                phoneNumber: '083-888-9999',
-                time: '16:20:45'
-            },
-            {
-                id: 15,
-                date: '2025-05-22',
-                memberName: 'ลาร์รี่ เพจ',
-                channel: 'Bank Transfer',
-                amount: 999,
-                status: 'rejected',
-                transactionId: 'TXN001234581',
-                phoneNumber: '081-111-2222',
-                time: '13:15:20'
-            },
-            {
-                id: 16,
-                date: '2025-05-22',
-                memberName: 'เซอร์เกย์ บริน',
-                channel: 'PromptPay',
-                amount: 699,
-                status: 'approved',
-                transactionId: 'TXN001234582',
-                phoneNumber: '089-333-4444',
-                time: '10:45:35'
-            },
-            {
-                id: 17,
-                date: '2025-05-21',
-                memberName: 'ทิม คุก',
-                channel: 'Mobile Banking',
-                amount: 1299,
-                status: 'pending',
-                transactionId: 'TXN001234583',
-                phoneNumber: '092-555-6666',
-                time: '15:30:10'
-            },
-            {
-                id: 18,
-                date: '2025-05-21',
-                memberName: 'ซาต์ย่า นาเดลลา',
-                channel: 'PromptPay',
-                amount: 899,
-                status: 'approved',
-                transactionId: 'TXN001234584',
-                phoneNumber: '083-777-8888',
-                time: '12:00:25'
-            },
-            {
-                id: 19,
-                date: '2025-05-20',
-                memberName: 'แจ็ค หม่า',
-                channel: 'Bank Transfer',
-                amount: 2199,
-                status: 'rejected',
-                transactionId: 'TXN001234585',
-                phoneNumber: '081-999-0000',
-                time: '08:30:55'
-            },
-            {
-                id: 20,
-                date: '2025-05-20',
-                memberName: 'ปอนี่ หม่า',
-                channel: 'PromptPay',
-                amount: 599,
-                status: 'approved',
-                transactionId: 'TXN001234586',
-                phoneNumber: '089-111-2222',
-                time: '17:45:40'
-            }
-        ];
-
         // Pagination variables
         let currentPage = 1;
         let itemsPerPage = 10;
-        let totalItems = 0;
-        let totalPages = 0;
-        let filteredTransactions = [];
+        let nextlitmit = 0 ;
+        let endlitmit = 10;
+        let totalRecords = '<%= total_record %>';
+        let totalPages = Math.ceil(totalRecords / itemsPerPage);
         let isLoading = false;
         let currentAction = null;
         let currentTransactionId = null;
@@ -1133,191 +920,146 @@
         const toast = document.getElementById('toast');
         const transactionTable = document.getElementById('transactionTable');
         const paginationContainer = document.getElementById('paginationContainer');
-        const paginationInfo = document.getElementById('paginationInfo');
+        paginationInfo = document.getElementById('paginationInfo');
         const pagination = document.getElementById('pagination');
 
-        // Simulate API delay
-        function simulateAPIDelay(ms = 500) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
 
-        // Set loading state
-        function setLoading(loading) {
-            isLoading = loading;
-            if (loading) {
-                transactionTable.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="loading-container">
-                            <div class="loading-spinner"></div>
-                            <span>กำลังโหลดข้อมูล...</span>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-
-        // Simulate API call to fetch transactions
-        async function fetchTransactions(page = 1, limit = 10, filters = {}) {
-            setLoading(true);
-            
-            try {
-                // Simulate API delay
-                await simulateAPIDelay();
-                
-                // Apply filters to all transactions
-                let filtered = allTransactions.filter(transaction => {
-                    const matchesSearch = !filters.search ||
-                        transaction.memberName.toLowerCase().includes(filters.search.toLowerCase()) ||
-                        transaction.channel.toLowerCase().includes(filters.search.toLowerCase());
-                    
-                    const matchesDate = !filters.date || transaction.date === filters.date;
-                    const matchesStatus = !filters.status || transaction.status === filters.status;
-                    
-                    return matchesSearch && matchesDate && matchesStatus;
-                });
-                
-                // Calculate pagination
-                const total = filtered.length;
-                const totalPagesCalc = Math.ceil(total / limit);
-                const startIndex = (page - 1) * limit;
-                const endIndex = startIndex + limit;
-                const data = filtered.slice(startIndex, endIndex);
-                
-                // Simulate API response structure
-                return {
-                    success: true,
-                    data: data,
-                    pagination: {
-                        page: page,
-                        limit: limit,
-                        total: total,
-                        totalPages: totalPagesCalc,
-                        hasNextPage: page < totalPagesCalc,
-                        hasPrevPage: page > 1
-                    }
-                };
-            } catch (error) {
-                return {
-                    success: false,
-                    message: 'ไม่สามารถโหลดข้อมูลได้',
-                    error: error.message
-                };
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // Get current filter values
-        function getCurrentFilters() {
-            return {
-                search: document.getElementById('searchInput').value,
-                date: document.getElementById('dateFilter').value,
-                status: document.getElementById('statusFilter').value
-            };
-        }
-
-        // Load filters from URL parameters
-        function loadFiltersFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            
-            const searchInput = document.getElementById('searchInput');
-            const dateFilter = document.getElementById('dateFilter');
-            const statusFilter = document.getElementById('statusFilter');
-            const pageSizeSelect = document.getElementById('pageSizeSelect');
-            
-            if (params.get('search')) searchInput.value = params.get('search');
-            if (params.get('date')) dateFilter.value = params.get('date');
-            if (params.get('status')) statusFilter.value = params.get('status');
-            if (params.get('limit')) {
-                const limit = parseInt(params.get('limit'));
-                if ([5, 10, 20, 50].includes(limit)) {
-                    pageSizeSelect.value = limit;
-                    itemsPerPage = limit;
-                }
-            }
-            if (params.get('page')) {
-                currentPage = parseInt(params.get('page')) || 1;
-            }
-        }
-
-        // Load transactions from API
-        async function loadTransactions(page = 1) {
-            const filters = getCurrentFilters();
-            const response = await fetchTransactions(page, itemsPerPage, filters);
-            
-            if (response.success) {
-                filteredTransactions = response.data;
-                currentPage = response.pagination.page;
-                totalItems = response.pagination.total;
-                totalPages = response.pagination.totalPages;
-                
-                renderTransactions();
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            // setLoading(true);
+            setupEventListeners();
+            handleResize();
+            renderPagination();
+        });
+    
+        // Action
+        function filtersTransaction() {
+            fetch('/admin/transactions', {
+                method: 'POST',
+                credentials: 'include', // Include cookies for session management
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    memberName: document.getElementById('nameFilter').value,
+                    date: document.getElementById('dateFilter').value,
+                    status: document.getElementById('statusFilter').value,
+                    nextlitmit:nextlitmit,
+                    endlitmit:endlitmit
+                })
+            })          
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('transactionTable').innerHTML = html;
                 renderPagination();
-            } else {
-                showToast(response.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
-                renderEmptyState();
+            })
+            .catch(err => console.error('Fetch error:', err));
+        }
+
+        async function confirmAction() {
+            const TagtransactionId = document.getElementById('transactionId').value;
+            const TagtransactionName = document.getElementById('transactionName').value;
+            const user_id = document.getElementById('transactionuser_id').value;
+            const package_id = document.getElementById('transactionpackage_id').value;
+            if (!currentTransactionId || !currentAction) return;
+            if (TagtransactionId != currentTransactionId) return;
+
+            // Update transaction status
+            let ActionStatus = currentAction === 'approve' ? 'approved' : 'rejected';
+            let dataBody = {
+                transactionId : TagtransactionId,
+                nameuser : TagtransactionName,
+                status :  currentAction === 'approve' ? 'completed' : 'canceled',
+                userId: user_id,
+                packageId: package_id
             }
+           await updateTransaction(dataBody);
+           closeModal();
         }
 
-        // Render empty state
-        function renderEmptyState() {
-            transactionTable.innerHTML = `
-                <tr>
-                    <td colspan="6" class="empty-state">
-                        <div class="empty-state-icon">📊</div>
-                        <div>ไม่พบข้อมูลธุรกรรม</div>
-                    </td>
-                </tr>
-            `;
-            paginationContainer.style.display = 'none';
+        async function updateTransaction(actions) {
+              fetch('/admin/transactions/update', {
+                method: 'POST',
+                credentials: 'include', // Include cookies for session management
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({actions})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(
+                        `ธุรกรรมของ "${actions.nameuser}" ได้${actions.status === 'approve' ? 'รับการยืนยัน' : 'ถูกยกเลิก'}แล้ว`,
+                        'success'
+                    );
+                    filtersTransaction();
+                    return true;
+                } else {
+                    showToast(
+                        `ธุรกรรมของ "${actions.nameuser}" เกิดข้อผิดพลาด `,
+                        'error'
+                    );
+                    console.error('Error updating transaction:', data.message);
+                    return false;
+                }
+            })
+            .catch(err => {
+                console.error('Fetch error:', err);
+                showToast(
+                    `ธุรกรรมของ "${actions.nameuser}" เกิดข้อผิดพลาด `,
+                    'error'
+                );
+                return false;
+            });  
         }
 
-        // Render transactions
-        function renderTransactions() {
-            if (filteredTransactions.length === 0) {
-                renderEmptyState();
+        async function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage || isLoading) {
                 return;
             }
-
-            transactionTable.innerHTML = filteredTransactions.map(transaction => `
-                <tr>
-                    <td>${formatDate(transaction.date)}</td>
-                    <td><strong>${transaction.memberName}</strong></td>
-                    <td>${transaction.channel}</td>
-                    <td><strong>฿${transaction.amount.toLocaleString()}</strong></td>
-                    <td><span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            ${transaction.status === 'pending' ? `
-                                <button class="btn btn-success" onclick="showConfirmModal(${transaction.id}, 'approve')">
-                                    ✅ ยืนยัน
-                                </button>
-                                <button class="btn btn-danger" onclick="showConfirmModal(${transaction.id}, 'reject')">
-                                    ❌ ยกเลิก
-                                </button>
-                            ` : `
-                                <span style="color: #666; font-size: 12px;">ดำเนินการแล้ว</span>
-                            `}
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            if(page > currentPage){
+                nextlitmit = nextlitmit+itemsPerPage;
+                endlitmit =  endlitmit+itemsPerPage;
+            }else{
+                nextlitmit = nextlitmit-itemsPerPage;
+                endlitmit =  endlitmit-itemsPerPage;
+            }
+            currentPage = page;
+            filtersTransaction();
         }
+
+        async function fastpage(mod) {
+            if (mod === 'first') {
+                currentPage = 1;
+                nextlitmit = 0;
+                endlitmit = itemsPerPage;
+            } else if (mod === 'last') {
+                currentPage = totalPages;
+                nextlitmit = (totalPages - 1) * itemsPerPage;
+                endlitmit = totalRecords;
+            } else {
+                return ; // Invalid action
+            }
+            filtersTransaction();
+        }
+
 
         // Render pagination
         function renderPagination() {
-            if (totalPages <= 1) {
+            if (totalRecords <= 1) {
                 paginationContainer.style.display = 'none';
                 return;
             }
             
             paginationContainer.style.display = 'block';
-            
             // Update pagination info
-            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            const startItem = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalRecords);
             
-            paginationInfo.textContent = `แสดงรายการที่ ${startItem}-${endItem} จากทั้งหมด ${totalItems.toLocaleString()} รายการ`;
+            paginationInfo.textContent = `แสดงรายการที่ ${startItem}-${endItem} จากทั้งหมด ${totalRecords.toLocaleString()} รายการ`;
             
             // Generate pagination buttons
             const maxVisiblePages = 5;
@@ -1330,12 +1072,8 @@
             }
             
             let paginationHTML = `
-                <button class="pagination-btn" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>
-                    ««
-                </button>
-                <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
-                    ‹
-                </button>
+                <button class="pagination-btn" onclick="fastpage('first')" ${currentPage === 1 ? 'disabled' : ''}> «« </button>
+                <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}> ‹ </button>
             `;
             
             // Add page numbers
@@ -1348,66 +1086,27 @@
             }
             
             paginationHTML += `
-                <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    ›
-                </button>
-                <button class="pagination-btn" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    »»
-                </button>
+                <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalRecords ? 'disabled' : ''}> › </button>
+                <button class="pagination-btn" onclick="fastpage('last')" ${currentPage === totalRecords ? 'disabled' : ''}> »» </button>
             `;
             
             pagination.innerHTML = paginationHTML;
         }
 
-        // Go to specific page
-        async function goToPage(page) {
-            if (page < 1 || page > totalPages || page === currentPage || isLoading) {
-                return;
+        // Set loading state
+        function setLoading(loading) {
+            isLoading = loading;
+            if (loading) {
+                transactionTable.innerHTML = `
+                    <tr>
+                        <td colspan="1" class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <span>กำลังโหลดข้อมูล...</span>
+                        </td>
+                    </tr>
+                `;
             }
-            
-            await loadTransactions(page);
-            updateURLParams();
-            
-            // Scroll to top of table
-            document.querySelector('.table-container').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
         }
-
-        // Change page size
-        async function changePageSize() {
-            const newPageSize = parseInt(document.getElementById('pageSizeSelect').value);
-            if (newPageSize === itemsPerPage) return;
-            
-            itemsPerPage = newPageSize;
-            currentPage = 1; // Reset to first page
-            await loadTransactions(1);
-            updateURLParams();
-        }
-
-        // Update URL parameters for bookmarking/sharing
-        function updateURLParams() {
-            const filters = getCurrentFilters();
-            const params = new URLSearchParams();
-            
-            if (filters.search) params.set('search', filters.search);
-            if (filters.date) params.set('date', filters.date);
-            if (filters.status) params.set('status', filters.status);
-            if (currentPage > 1) params.set('page', currentPage);
-            if (itemsPerPage !== 10) params.set('limit', itemsPerPage);
-            
-            const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            window.history.replaceState({}, '', newURL);
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function () {
-            loadFiltersFromURL();
-            loadTransactions(currentPage);
-            setupEventListeners();
-            handleResize();
-        });
 
         // Event Listeners
         function setupEventListeners() {
@@ -1424,13 +1123,13 @@
             });
 
             // Search and filter inputs with debounce
-            const searchInput = document.getElementById('searchInput');
+            const nameFilter = document.getElementById('nameFilter');
             const dateFilter = document.getElementById('dateFilter');
             const statusFilter = document.getElementById('statusFilter');
             
-            searchInput.addEventListener('input', debounce(applyFilters, 500));
-            dateFilter.addEventListener('change', applyFilters);
-            statusFilter.addEventListener('change', applyFilters);
+            nameFilter.addEventListener('input', debounce(filtersTransaction, 500));
+            dateFilter.addEventListener('change', filtersTransaction);
+            statusFilter.addEventListener('change', filtersTransaction);
 
             // Window resize
             window.addEventListener('resize', debounce(handleResize, 250));
@@ -1566,33 +1265,32 @@
             if (isMobile) {
                 closeSidebar();
             }
-        }
 
-        // Apply filters (reload from first page)
-        async function applyFilters() {
-            currentPage = 1;
-            await loadTransactions(1);
-            updateURLParams();
+            // In a real app, you would navigate to different pages here
+            console.log('Navigate to:', page);
         }
 
         // Show confirmation modal
-        function showConfirmModal(transactionId, action) {
-            const transaction = allTransactions.find(t => t.id === transactionId);
+        function showConfirmModal(transactionId,amount,memberName,uid,package_id, action) {
             const modalTitle = document.getElementById('modalTitle');
             const modalMessage = document.getElementById('modalMessage');
             const confirmBtn = document.getElementById('confirmBtn');
+            document.getElementById('transactionId').value = `${transactionId}`;
+            document.getElementById('transactionName').value = `${memberName}`;
+            document.getElementById('transactionuser_id').value = `${uid}`;
+            document.getElementById('transactionpackage_id').value = `${package_id}`;
 
             currentTransactionId = transactionId;
             currentAction = action;
 
             if (action === 'approve') {
                 modalTitle.textContent = 'ยืนยันธุรกรรม';
-                modalMessage.textContent = `คุณต้องการยืนยันธุรกรรมของ "${transaction.memberName}" จำนวน ฿${transaction.amount.toLocaleString()} ใช่หรือไม่?`;
+                modalMessage.textContent = `คุณต้องการยืนยันธุรกรรมของ "${transactionId}"  จำนวน ฿${amount.toLocaleString()} ใช่หรือไม่?`;
                 confirmBtn.textContent = 'ยืนยัน';
                 confirmBtn.className = 'btn btn-success';
             } else {
                 modalTitle.textContent = 'ยกเลิกธุรกรรม';
-                modalMessage.textContent = `คุณต้องการยกเลิกธุรกรรมของ "${transaction.memberName}" จำนวน ฿${transaction.amount.toLocaleString()} ใช่หรือไม่?`;
+                modalMessage.textContent = `คุณต้องการยกเลิกธุรกรรมของ "${transactionId}" จำนวน ฿${amount.toLocaleString()} ใช่หรือไม่?`;
                 confirmBtn.textContent = 'ยกเลิก';
                 confirmBtn.className = 'btn btn-danger';
             }
@@ -1607,27 +1305,6 @@
             document.body.style.overflow = '';
             currentTransactionId = null;
             currentAction = null;
-        }
-
-        // Confirm action
-        async function confirmAction() {
-            if (!currentTransactionId || !currentAction) return;
-
-            const transaction = allTransactions.find(t => t.id === currentTransactionId);
-            if (!transaction) return;
-
-            // Update transaction status
-            transaction.status = currentAction === 'approve' ? 'approved' : 'rejected';
-
-            // Show success toast
-            showToast(
-                `ธุรกรรมของ "${transaction.memberName}" ได้${currentAction === 'approve' ? 'รับการยืนยัน' : 'ถูกยกเลิก'}แล้ว`,
-                'success'
-            );
-
-            // Reload current page to reflect changes
-            await loadTransactions(currentPage);
-            closeModal();
         }
 
         // Show toast notification
@@ -1653,8 +1330,9 @@
         function getStatusText(status) {
             const statusMap = {
                 'pending': '⏳ รอดำเนินการ',
-                'approved': '✅ อนุมัติแล้ว',
-                'rejected': '❌ ยกเลิกแล้ว'
+                'completed': '✅ อนุมัติแล้ว',
+                'canceled': '❌ ยกเลิกแล้ว',
+                'expired': '⛔ หมดอายุแล้ว'
             };
             return statusMap[status] || status;
         }
@@ -1679,7 +1357,6 @@
 
                 setTimeout(() => {
                     // In real app, redirect to login page
-                    alert('ออกจากระบบสำเร็จ! (ในระบบจริงจะนำทางกลับไปยังหน้าเข้าสู่ระบบ)');
                     window.location.href = '/admin/login';
                 }, 1000);
             }

@@ -61,6 +61,32 @@ class TransactionModel {
             throw error;
         }
     }
+
+    static async getTransaction(filters = false) {
+        let params = {};
+        let transactionQueryLimit = ` LIMIT 0,10 `;
+        if (filters) {
+            const { memberName, status, date,nextlitmit,endlitmit } = filters;
+            if (memberName && memberName!='') params.recipient_name = memberName;
+            if (status && status!='all') params.status = status;
+            if (date && date!='')  params.updated_at = date;
+            if (nextlitmit && nextlitmit!='' && endlitmit && endlitmit!=''){
+                transactionQueryLimit = ` LIMIT ${nextlitmit},${endlitmit} `;
+            }
+        }
+        const transactionQueryJoin = ` INNER JOIN packages p ON t.package_id = p.id `;
+        const transactionQueryOrderBy = ` ORDER BY t.id `;
+        const transactionQuerySeleted = ` t.*,
+                                      p.name as package_name,
+                                      p.display_name as package_display_name,
+                                      p.price as package_price,
+                                      'Promptpay' as channel `;
+
+       const total_record = await DBHelper.selectSql(' count(t.id) as total_record ','transactions t', params);
+       const row = await DBHelper.selectSql(transactionQuerySeleted,'transactions t',params,transactionQueryJoin,transactionQueryOrderBy,transactionQueryLimit);
+       return {row:row,total_record:total_record[0].total_record}
+    }
+
 }
 
 module.exports = TransactionModel;
