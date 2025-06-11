@@ -388,7 +388,6 @@ class PaymentController {
    */
   static async handleRenewalCompletion(userId, packageData) {
     try {
-      
       // ดึง subscription ที่หมดอายุ
       const expiredSubscription = await SubscriptionController.getExpiredSubscription(userId);
       
