@@ -97,9 +97,17 @@
         }
 
         .nav-item::before {
-            content: '📊';
             margin-right: 12px;
             font-size: 16px;
+        }
+
+        /* เพิ่มการกำหนด icon แยกตาม class */
+        .nav-item.transactions::before {
+            content: '📊';
+        }
+
+        .nav-item.fortune-test::before {
+            content: '🔮';
         }
 
         .nav-item.members::before {
@@ -336,7 +344,7 @@
             white-space: nowrap;
         }
 
-        .status-bg{
+        .status-bg {
             color: #737272;
             font-size: 12px;
         }
@@ -346,6 +354,7 @@
             color: #856404;
             padding: 5px;
         }
+
         .status-completed {
             background: #d4edda;
             color: #155724;
@@ -489,8 +498,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Modal */
@@ -842,7 +856,7 @@
                             </select>
                         </div>
                         <div class="filter-group">
-                            <button class="filter-btn" onclick="filtersTransaction()">ค้นหา</button>
+                            <button class="filter-btn" type="button" onclick="filtersTransaction(true)">ค้นหา</button>
                         </div>
                     </div>
                 </div>
@@ -860,7 +874,7 @@
                                     <th>การดำเนินการ</th>
                                 </tr>
                             </thead>
-                               <tbody id="transactionTable"> <%- include('transactionTable') %> </tbody>
+                            <tbody id="transactionTable"> <%- include('transactionTable') %> </tbody>
                         </table>
                     </div>
                 </div>
@@ -878,10 +892,10 @@
 
     <!-- Confirmation Modal -->
     <div class="modal" id="confirmModal">
-        <input type="hidden" id="transactionId" >
-        <input type="hidden" id="transactionName" >
-        <input type="hidden" id="transactionpackage_id" >
-        <input type="hidden" id="transactionuser_id" >
+        <input type="hidden" id="transactionId">
+        <input type="hidden" id="transactionName">
+        <input type="hidden" id="transactionpackage_id">
+        <input type="hidden" id="transactionuser_id">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">ยืนยันการดำเนินการ</h3>
@@ -901,10 +915,10 @@
         // Pagination variables
         let currentPage = 1;
         let itemsPerPage = 10;
-        let nextlitmit = 0 ;
+        let nextlitmit = 0;
         let endlitmit = 10;
-        let totalRecords = '<%= total_record %>';
-        let totalPages = Math.ceil(totalRecords / itemsPerPage);
+        let totalRecords = parseInt('<%= total_record %>') || 0; // จำนวนรายการทั้งหมด
+        let totalPages = Math.ceil(totalRecords / itemsPerPage); // จำนวนหน้าทั้งหมด
         let isLoading = false;
         let currentAction = null;
         let currentTransactionId = null;
@@ -912,7 +926,7 @@
 
         // DOM Elements
         const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');  
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
         const mainContent = document.getElementById('mainContent');
         const toggleSidebar = document.getElementById('toggleSidebar');
         const toggleIcon = document.getElementById('toggleIcon');
@@ -931,9 +945,31 @@
             handleResize();
             renderPagination();
         });
-    
+
         // Action
-        function filtersTransaction() {
+        function filtersTransaction(fromClick = false) {
+            // หากกดปุ่มค้นหา (fromClick = true) ให้รีเซ็ต currentPage เป็น 1
+            if (fromClick) {
+                currentPage = 1;
+                nextlitmit = 0;
+                endlitmit = itemsPerPage;
+            }
+
+            // เตรียมข้อมูลที่จะส่ง
+            const requestBody = {
+                memberName: document.getElementById('nameFilter').value,
+                date: document.getElementById('dateFilter').value,
+                status: document.getElementById('statusFilter').value,
+                nextlitmit: nextlitmit,
+                endlitmit: endlitmit,
+                itemsPerPage: itemsPerPage
+            };
+
+            // หากไม่ใช่ fromClick ให้เพิ่ม currentPage ลงใน body
+            if (!fromClick) {
+                requestBody.currentPage = currentPage;
+            }
+
             fetch('/admin/transactions', {
                 method: 'POST',
                 credentials: 'include', // Include cookies for session management
@@ -941,20 +977,21 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({
-                    memberName: document.getElementById('nameFilter').value,
-                    date: document.getElementById('dateFilter').value,
-                    status: document.getElementById('statusFilter').value,
-                    nextlitmit:nextlitmit,
-                    endlitmit:endlitmit
-                })
-            })          
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById('transactionTable').innerHTML = html;
-                renderPagination();
+                body: JSON.stringify(requestBody)
             })
-            .catch(err => console.error('Fetch error:', err));
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('transactionTable').innerHTML = data.html;
+                        totalRecords = data.totalRecords || 0; // อัปเดตจำนวนรายการทั้งหมด
+                        totalPages = Math.ceil(totalRecords / itemsPerPage); // คำนวณจำนวนหน้าทั้งหมด
+                        currentPage = data.currentPage || 1; // อัปเดตหน้าปัจจุบัน
+                        renderPagination(); // อัปเดต pagination ใหม่
+                    } else {
+                        console.error('Error fetching transactions:', data.message);
+                    }
+                })
+                .catch(err => console.error('Fetch error:', err));
         }
 
         async function confirmAction() {
@@ -968,64 +1005,64 @@
             // Update transaction status
             let ActionStatus = currentAction === 'approve' ? 'approved' : 'rejected';
             let dataBody = {
-                transactionId : TagtransactionId,
-                nameuser : TagtransactionName,
-                status :  currentAction === 'approve' ? 'completed' : 'canceled',
+                transactionId: TagtransactionId,
+                nameuser: TagtransactionName,
+                status: currentAction === 'approve' ? 'completed' : 'canceled',
                 userId: user_id,
                 packageId: package_id
             }
-           await updateTransaction(dataBody);
-           closeModal();
+            await updateTransaction(dataBody);
+            closeModal();
         }
 
         async function updateTransaction(actions) {
-              fetch('/admin/transactions/update', {
+            fetch('/admin/transactions/update', {
                 method: 'POST',
                 credentials: 'include', // Include cookies for session management
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({actions})
+                body: JSON.stringify({ actions })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(
-                        `ธุรกรรมของ "${actions.nameuser}" ได้${actions.status === 'approve' ? 'รับการยืนยัน' : 'ถูกยกเลิก'}แล้ว`,
-                        'success'
-                    );
-                    filtersTransaction();
-                    return true;
-                } else {
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(
+                            `ธุรกรรมของ "${actions.nameuser}" ได้${actions.status === 'approve' ? 'รับการยืนยัน' : 'ถูกยกเลิก'}แล้ว`,
+                            'success'
+                        );
+                        filtersTransaction();
+                        return true;
+                    } else {
+                        showToast(
+                            `ธุรกรรมของ "${actions.nameuser}" เกิดข้อผิดพลาด `,
+                            'error'
+                        );
+                        console.error('Error updating transaction:', data.message);
+                        return false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
                     showToast(
                         `ธุรกรรมของ "${actions.nameuser}" เกิดข้อผิดพลาด `,
                         'error'
                     );
-                    console.error('Error updating transaction:', data.message);
                     return false;
-                }
-            })
-            .catch(err => {
-                console.error('Fetch error:', err);
-                showToast(
-                    `ธุรกรรมของ "${actions.nameuser}" เกิดข้อผิดพลาด `,
-                    'error'
-                );
-                return false;
-            });  
+                });
         }
 
         async function goToPage(page) {
             if (page < 1 || page > totalPages || page === currentPage || isLoading) {
                 return;
             }
-            if(page > currentPage){
-                nextlitmit = nextlitmit+itemsPerPage;
-                endlitmit =  endlitmit+itemsPerPage;
-            }else{
-                nextlitmit = nextlitmit-itemsPerPage;
-                endlitmit =  endlitmit-itemsPerPage;
+            if (page > currentPage) {
+                nextlitmit = nextlitmit + itemsPerPage;
+                endlitmit = endlitmit + itemsPerPage;
+            } else {
+                nextlitmit = nextlitmit - itemsPerPage;
+                endlitmit = endlitmit - itemsPerPage;
             }
             currentPage = page;
             filtersTransaction();
@@ -1041,7 +1078,7 @@
                 nextlitmit = (totalPages - 1) * itemsPerPage;
                 endlitmit = totalRecords;
             } else {
-                return ; // Invalid action
+                return; // Invalid action
             }
             filtersTransaction();
         }
@@ -1049,33 +1086,30 @@
 
         // Render pagination
         function renderPagination() {
-            if (totalRecords <= 1) {
+            if (totalRecords <= 0) {
                 paginationContainer.style.display = 'none';
                 return;
             }
-            
+
             paginationContainer.style.display = 'block';
-            // Update pagination info
             const startItem = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
             const endItem = Math.min(currentPage * itemsPerPage, totalRecords);
-            
+
             paginationInfo.textContent = `แสดงรายการที่ ${startItem}-${endItem} จากทั้งหมด ${totalRecords.toLocaleString()} รายการ`;
-            
-            // Generate pagination buttons
+
             const maxVisiblePages = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
             let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            // Adjust startPage if we're near the end
+
             if (endPage - startPage < maxVisiblePages - 1) {
                 startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            
+
             let paginationHTML = `
                 <button class="pagination-btn" onclick="fastpage('first')" ${currentPage === 1 ? 'disabled' : ''}> «« </button>
                 <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}> ‹ </button>
             `;
-            
+
             // Add page numbers
             for (let i = startPage; i <= endPage; i++) {
                 paginationHTML += `
@@ -1084,12 +1118,12 @@
                     </button>
                 `;
             }
-            
+
             paginationHTML += `
-                <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalRecords ? 'disabled' : ''}> › </button>
-                <button class="pagination-btn" onclick="fastpage('last')" ${currentPage === totalRecords ? 'disabled' : ''}> »» </button>
+                <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}> › </button>
+                <button class="pagination-btn" onclick="fastpage('last')" ${currentPage === totalPages ? 'disabled' : ''}> »» </button>
             `;
-            
+
             pagination.innerHTML = paginationHTML;
         }
 
@@ -1122,61 +1156,14 @@
                 closeSidebar();
             });
 
-            // Search and filter inputs with debounce
-            const nameFilter = document.getElementById('nameFilter');
-            const dateFilter = document.getElementById('dateFilter');
-            const statusFilter = document.getElementById('statusFilter');
-            
-            nameFilter.addEventListener('input', debounce(filtersTransaction, 500));
-            dateFilter.addEventListener('change', filtersTransaction);
-            statusFilter.addEventListener('change', filtersTransaction);
+            // ตรวจสอบว่าปุ่มค้นหาไม่ได้ถูกผูก Event Listener ซ้ำ
+            const searchButton = document.querySelector('.filter-btn');
+            searchButton.removeEventListener('click', filtersTransaction); // ลบ Event Listener เดิมก่อน
+            searchButton.addEventListener('click', filtersTransaction); // เพิ่ม Event Listener ใหม่
 
             // Window resize
             window.addEventListener('resize', debounce(handleResize, 250));
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    if (modal.classList.contains('show')) {
-                        closeModal();
-                    } else if (isMobile && sidebar.classList.contains('show')) {
-                        closeSidebar();
-                    }
-                }
-                
-                // Pagination keyboard shortcuts (when not in input fields)
-                if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
-                    if (e.key === 'ArrowLeft' && currentPage > 1) {
-                        e.preventDefault();
-                        goToPage(currentPage - 1);
-                    } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
-                        e.preventDefault();
-                        goToPage(currentPage + 1);
-                    } else if (e.key === 'Home') {
-                        e.preventDefault();
-                        goToPage(1);
-                    } else if (e.key === 'End') {
-                        e.preventDefault();
-                        goToPage(totalPages);
-                    }
-                }
-            });
-
-            // Close modal when clicking outside
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) {
-                    closeModal();
-                }
-            });
-
-            // Prevent body scroll when sidebar is open on mobile
-            sidebar.addEventListener('transitionstart', function () {
-                if (isMobile) {
-                    document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
-                }
-            });
         }
-
         // Handle window resize
         function handleResize() {
             const newIsMobile = window.innerWidth <= 767;
@@ -1271,7 +1258,7 @@
         }
 
         // Show confirmation modal
-        function showConfirmModal(transactionId,amount,memberName,uid,package_id, action) {
+        function showConfirmModal(transactionId, amount, memberName, uid, package_id, action) {
             const modalTitle = document.getElementById('modalTitle');
             const modalMessage = document.getElementById('modalMessage');
             const confirmBtn = document.getElementById('confirmBtn');
@@ -1351,14 +1338,21 @@
 
         function logout() {
             if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-                // Clear session data
-                window.sessionData = null;
-                showToast('ออกจากระบบแล้ว', 'success');
-
-                setTimeout(() => {
-                    // In real app, redirect to login page
-                    window.location.href = '/admin/login';
-                }, 1000);
+                fetch('/admin/logout', { method: 'POST' }) // เรียก API เพื่อลบ session
+                    .then(response => {
+                        if (response.ok) {
+                            showToast('ออกจากระบบแล้ว', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/admin/login'; // Redirect ไปยังหน้า login
+                            }, 1000);
+                        } else {
+                            showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                    });
             }
         }
     </script>

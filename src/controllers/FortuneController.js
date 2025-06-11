@@ -61,6 +61,7 @@ class FortuneController {
      * แสดงหน้าทดสอบ daily fortune
      */
     static async showTestPage(req, res) {
+        res.setHeader('Cache-Control', 'no-store');
         try {
             // ดึงสมาชิกทั้งหมด
             const users = await DBHelper.query(`

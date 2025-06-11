@@ -83,12 +83,14 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 20px 20px;
+            padding: 16px 20px;
+            /* เปลี่ยนจาก 20px 20px */
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
-            font-size: 16px;
+            font-size: 15px;
+            /* เปลี่ยนจาก 16px */
         }
 
         .nav-item:hover,
@@ -99,8 +101,10 @@
         }
 
         .nav-item::before {
-            margin-right: 15px;
-            font-size: 18px;
+            margin-right: 12px;
+            /* เปลี่ยนจาก 15px */
+            font-size: 16px;
+            /* เปลี่ยนจาก 18px */
         }
 
         .nav-item.transactions::before {
@@ -747,6 +751,45 @@
                 padding: 16px;
             }
         }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 3000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: #28a745;
+        }
+
+        .toast-error {
+            background: #dc3545;
+        }
+
+        .toast-info {
+            background: #17a2b8;
+        }
+
+        .toast-warning {
+            background: #ffc107;
+            color: #212529;
+        }
     </style>
 </head>
 
@@ -793,7 +836,7 @@
                             <p class="page-subtitle">จัดการและทดสอบการส่ง fortune ประจำวัน</p>
                         </div>
                         <button class="add-admin-btn" onclick="openAddAdminModal()">
-                             เพิ่มผู้ดูแล
+                            เพิ่มผู้ดูแล
                         </button>
                     </div>
                 </div>
@@ -920,6 +963,8 @@
             </div>
         </div>
     </div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
     <script>
         let isMobile = window.innerWidth <= 767;
@@ -928,7 +973,7 @@
         const mainContent = document.getElementById('mainContent');
         const toggleSidebar = document.getElementById('toggleSidebar');
         const toggleIcon = document.getElementById('toggleIcon');
-
+        const toast = document.getElementById('toast');
         // ===== MODAL FUNCTIONS =====
         function openAddAdminModal() {
             const modal = document.getElementById('addAdminModal');
@@ -1198,16 +1243,31 @@
             }
         }
 
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = `toast toast-${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
         function logout() {
             if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-                fetch('/admin/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(() => {
-                        window.location.href = '/admin/login';
+                fetch('/admin/logout', { method: 'POST' }) // เรียก API เพื่อลบ session
+                    .then(response => {
+                        if (response.ok) {
+                            showToast('ออกจากระบบแล้ว', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/admin/login'; // Redirect ไปยังหน้า login
+                            }, 1000);
+                        } else {
+                            showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
                     });
             }
         }

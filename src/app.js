@@ -81,7 +81,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // === 🚨 LINE Webhook: ต้องมาก่อน body-parser เพราะ LINE อาจส่ง raw body
 app.use('/webhook', webhookRoute);
-
 // 🌍 Routes
 app.use('/', routes);
 
