@@ -1,4 +1,4 @@
-const { provider, EasySlipService } = require('../services/payment');
+const EasySlipService = require('../services/payment/easySlipService');
 const DBHelper = require('../services/ormService');
 const QRCode = require('qrcode');
 const generatePayload = require('promptpay-qr');
