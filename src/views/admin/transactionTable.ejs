@@ -2,7 +2,9 @@
     <% transactions.forEach(function(transaction) { %>
         <tr>
             <td><%= new Date(transaction.updated_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) %></td>
+            <td><strong><%= transaction.user_full_name %></strong></td>
             <td><strong><%= transaction.recipient_name %></strong></td>
+            <td><strong><%= transaction.recipient_mobile %></strong></td>
             <td><%= transaction.channel %></td>
             <td><strong>฿ <%= transaction.amount %></strong></td>
             <td>

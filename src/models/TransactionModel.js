@@ -80,12 +80,14 @@ class TransactionModel {
                 }
             }
 
-            const transactionQueryJoin = ` INNER JOIN packages p ON t.package_id = p.id `;
+            const transactionQueryJoin = ` INNER JOIN packages p ON t.package_id = p.id 
+                                          INNER JOIN users u ON t.user_id = u.line_user_id `;
             const transactionQueryOrderBy = ` ORDER BY t.id desc`;
             const transactionQuerySeleted = ` t.*,
                                       p.name as package_name,
                                       p.display_name as package_display_name,
                                       p.price as package_price,
+                                      u.full_name as user_full_name,
                                       'Promptpay' as channel `;
 
             // Query สำหรับจำนวนรายการทั้งหมด
