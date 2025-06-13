@@ -17,6 +17,7 @@ const { dbOptions } = require('./services/dbService');
 const webhookRoute = require('./routes/webhook');
 const routes = require('./routes');
 const { CronScheduler } = require('./jobs'); // เพิ่ม cron scheduler
+const DBHelper = require('./services/ormService'); // เพิ่ม import DBHelper
 
 const app = express();
 const PORT = config.PORT || 3000;
@@ -105,24 +106,44 @@ app.listen(PORT, () => {
 });
 
 // 🛑 Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n🛑 Received SIGINT, shutting down gracefully...');
   
-  // หยุด cron jobs
-  CronScheduler.stopAllJobs();
-  
-  // ปิด server
-  process.exit(0);
+  try {
+    // หยุด cron jobs
+    console.log('📅 Stopping cron jobs...');
+    CronScheduler.stopAllJobs();
+    
+    // ปิด database pool
+    console.log('💾 Closing database connections...');
+    await DBHelper.closePool();
+    
+    console.log('✅ Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
   
-  // หยุด cron jobs
-  CronScheduler.stopAllJobs();
-  
-  // ปิด server
-  process.exit(0);
+  try {
+    // หยุด cron jobs
+    console.log('📅 Stopping cron jobs...');
+    CronScheduler.stopAllJobs();
+    
+    // ปิด database pool
+    console.log('💾 Closing database connections...');
+    await DBHelper.closePool();
+    
+    console.log('✅ Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
 });
 
 module.exports = app;

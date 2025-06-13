@@ -1,21 +1,26 @@
 const mysql = require('mysql2/promise');
 const config = require('../config/config');
 
-let connection;
+let pool;
 
 class DBHelper {
-    static async getConnection() {
-        if (!connection) {
-            connection = await mysql.createConnection({
+    static async getPool() {
+        if (!pool) {
+            pool = mysql.createPool({
                 host: config.DB_HOST,
                 user: config.DB_USER,
                 password: config.DB_PASSWORD,
                 database: config.DB_NAME,
-                port: config.DB_PORT || 3306,
-                timezone: '+07:00' // เซ็ต timezone เป็นไทย
+                waitForConnections: true,
+                connectionLimit: 8,
+                queueLimit: 100,
+                idleTimeout: 300000,
+                charset: 'utf8mb4',
+                timezone: '+07:00'
             });
+
         }
-        return connection;
+        return pool;
     }
 
     static validateIdentifier(name) {
@@ -25,43 +30,30 @@ class DBHelper {
 
     static async query(sql, params = []) {
         try {
-            const conn = await this.getConnection();
-            const [rows] = await conn.execute(sql, params);
+            const pool = await this.getPool();
+            const [rows] = await pool.execute(sql, params);
             return rows;
         } catch (error) {
-            console.error('Database query error:', error);
+            console.error('❌ Database query error:', error);
             throw error;
         }
     }
 
-    // Transaction support
-    static async beginTransaction() {
-        try {
-            const conn = await this.getConnection();
-            await conn.beginTransaction();
-        } catch (error) {
-            console.error('Begin transaction error:', error);
-            throw error;
-        }
-    }
+    // Transaction methods สำหรับ pool
+    static async transaction(callback) {
+        const pool = await this.getPool();
+        const connection = await pool.getConnection();
 
-    static async commit() {
         try {
-            const conn = await this.getConnection();
-            await conn.commit();
+            await connection.beginTransaction();
+            const result = await callback(connection);
+            await connection.commit();
+            return result;
         } catch (error) {
-            console.error('Commit transaction error:', error);
+            await connection.rollback();
             throw error;
-        }
-    }
-
-    static async rollback() {
-        try {
-            const conn = await this.getConnection();
-            await conn.rollback();
-        } catch (error) {
-            console.error('Rollback transaction error:', error);
-            throw error;
+        } finally {
+            connection.release();
         }
     }
 
@@ -77,10 +69,10 @@ class DBHelper {
             throw new Error('Invalid column name(s)');
         }
 
-        const whereClause = whereKeys.length 
+        const whereClause = whereKeys.length
             ? 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ')
             : '';
-        
+
         const sql = `SELECT * FROM ${table} ${whereClause}`;
         return this.query(sql, [...whereValues, ...extraParams]);
     }
@@ -99,7 +91,7 @@ class DBHelper {
 
         const placeholders = keys.map(() => '?').join(', ');
         const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-        
+
         const result = await this.query(sql, values);
         return {
             insertId: result.insertId,
@@ -158,22 +150,112 @@ class DBHelper {
 
         const whereClause = 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ');
         const sql = `DELETE FROM ${table} ${whereClause}`;
-        
+
         const result = await this.query(sql, whereValues);
         return {
             affectedRows: result.affectedRows
         };
     }
-    
-    static async selectSql(selected,table, whereObj = {},join = '', orderBy = '', limit = '' ) {
+
+    static async selectSql(selected, table, whereObj = {}, join = '', orderBy = '', limit = '') {
         const whereKeys = Object.keys(whereObj);
         const whereClause = whereKeys.length
-        ? 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ')
-        : '';
+            ? 'WHERE ' + whereKeys.map(key => `${key} = ?`).join(' AND ')
+            : '';
         const sql = `SELECT ${selected} FROM ${table} ${join} ${whereClause} ${orderBy} ${limit}`;
         const params = Object.values(whereObj);
         return DBHelper.query(sql, params);
     }
+
+    /**
+     * ปิด database pool
+     */
+    static async closePool() {
+        if (pool) {
+            try {
+                console.log('🔌 Closing database pool...');
+                await pool.end();
+                pool = null;
+                console.log('✅ Database pool closed successfully');
+            } catch (error) {
+                console.error('❌ Error closing database pool:', error);
+                throw error;
+            }
+        } else {
+            console.log('ℹ️ Database pool is already closed or not initialized');
+        }
+    }
+
+    /**
+     * ตรวจสอบสถานะ pool
+     */
+    static getPoolStatus() {
+        if (!pool) {
+            return { status: 'not_initialized' };
+        }
+
+        return {
+            status: 'active',
+            totalConnections: pool.pool._allConnections ? pool.pool._allConnections.length : 0,
+            freeConnections: pool.pool._freeConnections ? pool.pool._freeConnections.length : 0,
+            queuedRequests: pool.pool._connectionQueue ? pool.pool._connectionQueue.length : 0
+        };
+    }
+
+    /**
+     * Health check สำหรับ pool
+     */
+    static async healthCheck() {
+        try {
+            const result = await this.query('SELECT 1 as health_check');
+            return {
+                status: 'healthy',
+                timestamp: new Date().toISOString(),
+                pool: this.getPoolStatus()
+            };
+        } catch (error) {
+            return {
+                status: 'unhealthy',
+                error: error.message,
+                timestamp: new Date().toISOString(),
+                pool: this.getPoolStatus()
+            };
+        }
+    }
 }
+
+// Handle process termination (เพิ่มการปิด pool อัตโนมัติ)
+process.on('exit', () => {
+    console.log('🚪 Process exiting, cleaning up database connections...');
+    if (pool) {
+        try {
+            pool.end();
+        } catch (error) {
+            console.error('❌ Error during cleanup:', error);
+        }
+    }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', async (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    try {
+        await DBHelper.closePool();
+    } catch (closeError) {
+        console.error('❌ Error closing pool during uncaught exception:', closeError);
+    }
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', async (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    try {
+        await DBHelper.closePool();
+    } catch (closeError) {
+        console.error('❌ Error closing pool during unhandled rejection:', closeError);
+    }
+    process.exit(1);
+});
 
 module.exports = DBHelper; // export แบบ direct class
