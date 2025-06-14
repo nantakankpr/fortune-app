@@ -28,6 +28,8 @@ class EasySlipService {
                 },
             );
 
+            console.log(data);
+
             // Check if API call was successful and data exists
             if (data.status === 200 && data.data) {
                 const slipData = data.data;

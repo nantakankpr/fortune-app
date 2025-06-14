@@ -818,7 +818,7 @@
                     <li>สแกน QR Code ที่แสดงด้านล่าง หรือกรอกเบอร์โทร</li>
                     <li>ตรวจสอบจำนวนเงินให้ถูกต้อง (<%= paymentData.amount %> บาท)</li>
                     <li>ยืนยันการโอนเงิน</li>
-                    <li>รอการยืนยันจากเจ้าหน้าที่ (ภายใน 24 ชั่วโมง)</li>
+                    <li>อัพโหลดรูปภาพสลีปและกดตรวจสอบ</li>
                 </ol>
             </div>
 
@@ -849,6 +849,18 @@
                 <div class="qr-section">
                     <div class="qr-title">
                         📱 สแกน QR Code เพื่อโอนเงิน (พร้อมเพย์)
+                    </div>
+                    <!-- รูปธนาคาร -->
+                    <div style="margin-bottom: 10px;">
+                        <img src="/image/BKKB.webp" alt="Bank Logo" style="width: 50px; height: auto;">
+                    </div>
+                    <!-- remark แจ้งเตือนสำหรับธนาคารกรุงเทพ -->
+                    <div style="font-size: 16px; color: #ff6b6b; margin-bottom: 10px;">
+                        <strong>หมายเหตุ: สำหรับลูกค้าธนาคารกรุงเทพ</strong>
+                        <p>
+                            การตรวจสอบสลิปธนาคารกรุงเทพอาจใช้เวลา 5-10 นาที
+                            หากต้องการความรวดเร็ว ขอแนะนำให้ใช้บริการธนาคารกสิกรไทยหรือธนาคารออมสิน
+                        </p>
                     </div>
                     <div class="qr-container">
                         <img src="<%= paymentData.qrImageUrl %>" alt="QR Code" class="qr-image" id="qrImage">
@@ -968,54 +980,6 @@
             document.getElementById('slipPreview').style.display = 'none';
         }
 
-        // Upload slip for verification
-        function uploadSlip() {
-            if (!selectedSlipFile) {
-                alert('กรุณาเลือกรูปสลิปก่อน');
-                return;
-            }
-
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const loadingContent = loadingOverlay.querySelector('.loading-content');
-            loadingContent.innerHTML = `
-                <div class="loading-spinner">📤</div>
-                <div>กำลังอัพโหลดและตรวจสอบสลิป...</div>
-            `;
-            loadingOverlay.style.display = 'flex';
-
-            const formData = new FormData();
-            formData.append('slip', selectedSlipFile);
-            formData.append('transactionId', '<%= paymentData.transactionId %>');
-
-            fetch('/api/payment/verify-slip', {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    loadingOverlay.style.display = 'none';
-
-                    if (data.success) {
-                        if (data.verified) {
-                            alert('✅ สลิปถูกต้อง! การชำระเงินได้รับการยืนยันแล้ว');
-                            // Refresh page or redirect to success page
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            alert('❌ สลิปไม่ถูกต้อง: ' + (data.message || 'กรุณาตรวจสอบข้อมูลในสลิปอีกครั้ง'));
-                        }
-                    } else {
-                        alert('เกิดข้อผิดพลาดในการตรวจสอบสลิป: ' + (data.message || 'กรุณาลองใหม่'));
-                    }
-                })
-                .catch(error => {
-                    loadingOverlay.style.display = 'none';
-                    console.error('Error:', error);
-                    alert('เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่');
-                });
-        }
-
         // Check order status
         function checkOrderStatus() {
             const loadingOverlay = document.getElementById('loadingOverlay');
@@ -1076,7 +1040,7 @@
                             window.location.href = '/order/succeeded';
                         }
                     } else {
-                        alert('❌ เกิดข้อผิดพลาดในการตรวจสอบสถานะ: ' + (data.error || 'กรุณาลองใหม่'));
+                        alert('⚠️ หากทำการโอนเงินแล้ว กรุณารอสักครู่แล้วลองตรวจสอบอีกครั้ง\n(ระบบอาจใช้เวลา 5-10 นาที)');
                     }
                 })
                 .catch(error => {
